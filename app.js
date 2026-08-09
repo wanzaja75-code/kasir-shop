@@ -101,7 +101,7 @@ function kasirApp() {
         // ===== HUTANG =====
         debts: JSON.parse(localStorage.getItem('debts')) || [],
         newDebt: { customer: '', amount: '', dueDate: '', note: '' },
-
+        
         // ===== NOTIFIKASI =====
         notifications: JSON.parse(localStorage.getItem('notifications')) || [],
         
@@ -180,6 +180,9 @@ function kasirApp() {
                 .filter(([code, p]) => p.stock !== undefined && p.stock <= 5 && p.stock > 0)
                 .map(([code, p]) => ({ code, name: p.name, stock: p.stock }));
         },
+        get unreadCount() {
+            return this.notifications.filter(n => !n.read).length;
+        },
         
         // ===== NAVIGASI =====
         navigateTo(page) {
@@ -204,10 +207,11 @@ function kasirApp() {
                 this.initChart();
             }, 500);
             
-            // Cek stok habis setiap 5 menit
+            // Cek notifikasi setiap 2 menit
+            this.checkNotifications();
             setInterval(() => {
-                this.checkLowStock();
-            }, 300000);
+                this.checkNotifications();
+            }, 120000);
         },
         
         updateDateTime() {
@@ -287,6 +291,15 @@ function kasirApp() {
             
             if (product.stock !== undefined) {
                 product.stock -= 1;
+            }
+            
+            // Notifikasi stok menipis
+            if (product.stock !== undefined && product.stock <= 5) {
+                this.addNotification(
+                    `⚠️ Stok ${product.name} tersisa ${product.stock} pcs! Segera restock.`,
+                    'stok',
+                    'Stok Menipis'
+                );
             }
             
             this.barcodeInput = '';
@@ -524,6 +537,98 @@ function kasirApp() {
             requestAnimationFrame(() => this.scanLoop());
         },
         
+        // ===== NOTIFIKASI =====
+        addNotification(message, type = 'info', label = 'Info') {
+            const notif = {
+                id: Date.now(),
+                message: message,
+                type: type,
+                label: label,
+                time: new Date().toLocaleString('id-ID', { 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    day: 'numeric',
+                    month: 'short'
+                }),
+                read: false
+            };
+            this.notifications.unshift(notif);
+            this.saveAll();
+            
+            if (this.notifications.length > 50) {
+                this.notifications = this.notifications.slice(0, 50);
+                this.saveAll();
+            }
+        },
+        
+        markRead(id) {
+            const notif = this.notifications.find(n => n.id === id);
+            if (notif) {
+                notif.read = true;
+                this.saveAll();
+            }
+        },
+        
+        markAllRead() {
+            this.notifications.forEach(n => n.read = true);
+            this.saveAll();
+        },
+        
+        removeNotification(id) {
+            this.notifications = this.notifications.filter(n => n.id !== id);
+            this.saveAll();
+        },
+        
+        clearAllNotifications() {
+            if (this.notifications.length === 0) return;
+            if (confirm('Hapus semua notifikasi?')) {
+                this.notifications = [];
+                this.saveAll();
+            }
+        },
+        
+        checkNotifications() {
+            // Cek stok habis
+            const lowStock = this.lowStockAlerts;
+            lowStock.forEach(item => {
+                const existing = this.notifications.find(n => 
+                    n.message.includes(item.name) && 
+                    n.type === 'stok' && 
+                    !n.read
+                );
+                if (!existing) {
+                    this.addNotification(
+                        `⚠️ Stok ${item.name} tersisa ${item.stock} pcs! Segera restock.`,
+                        'stok',
+                        'Stok Menipis'
+                    );
+                }
+            });
+            
+            // Cek hutang jatuh tempo
+            const today = new Date();
+            this.debts.forEach(debt => {
+                if (debt.status !== 'Belum Lunas') return;
+                const dueDate = new Date(debt.dueDate);
+                const diffDays = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+                
+                if (diffDays <= 3 && diffDays >= 0) {
+                    const existing = this.notifications.find(n => 
+                        n.message.includes(debt.customer) && 
+                        n.type === 'hutang' && 
+                        !n.read
+                    );
+                    if (!existing) {
+                        this.addNotification(
+                            `⏰ Hutang ${debt.customer} jatuh tempo ${diffDays === 0 ? 'HARI INI!' : diffDays + ' hari lagi'} (Rp ${debt.amount.toLocaleString()})`,
+                            'hutang',
+                            'Jatuh Tempo'
+                        );
+                    }
+                }
+            });
+        },
+        
         // ===== MEMBER =====
         addMember() {
             if (!this.newMember.name || !this.newMember.phone) {
@@ -531,7 +636,6 @@ function kasirApp() {
                 return;
             }
             
-            // Hitung tier berdasarkan poin (default 0)
             const poin = 0;
             const tier = this.getTier(poin);
             
@@ -542,6 +646,13 @@ function kasirApp() {
                 poin: poin,
                 tier: tier
             });
+            
+            this.addNotification(
+                `👤 Member baru: ${this.newMember.name} (${this.newMember.phone})`,
+                'member',
+                'Member Baru'
+            );
+            
             this.newMember = { name: '', phone: '' };
             this.saveAll();
             this.setStatus('fa-check-circle', 'Member berhasil ditambahkan!', 'success');
@@ -579,7 +690,6 @@ function kasirApp() {
             member.poin -= poin;
             member.tier = this.getTier(member.poin);
             
-            // Terapkan diskon ke keranjang
             this.discount = (this.discount || 0) + (diskon / this.subtotal * 100);
             
             this.saveAll();
@@ -602,6 +712,13 @@ function kasirApp() {
                 status: 'Belum Lunas',
                 note: this.newDebt.note || ''
             });
+            
+            this.addNotification(
+                `📝 Hutang ${this.newDebt.customer} sebesar Rp ${parseInt(this.newDebt.amount).toLocaleString()} dicatat. Jatuh tempo: ${this.newDebt.dueDate || '7 hari lagi'}`,
+                'hutang',
+                'Hutang Baru'
+            );
+            
             this.newDebt = { customer: '', amount: '', dueDate: '', note: '' };
             this.saveAll();
             this.setStatus('fa-check-circle', 'Hutang berhasil ditambahkan!', 'success');
@@ -633,6 +750,7 @@ function kasirApp() {
             localStorage.setItem('kasirHistory', JSON.stringify(this.history));
             localStorage.setItem('members', JSON.stringify(this.members));
             localStorage.setItem('debts', JSON.stringify(this.debts));
+            localStorage.setItem('notifications', JSON.stringify(this.notifications));
         },
         
         saveData() {
@@ -646,12 +764,14 @@ function kasirApp() {
             const history = localStorage.getItem('kasirHistory');
             const members = localStorage.getItem('members');
             const debts = localStorage.getItem('debts');
+            const notifications = localStorage.getItem('notifications');
             
             if (cart) this.cart = JSON.parse(cart);
             if (products) this.productDB = JSON.parse(products);
             if (history) this.history = JSON.parse(history);
             if (members) this.members = JSON.parse(members);
             if (debts) this.debts = JSON.parse(debts);
+            if (notifications) this.notifications = JSON.parse(notifications);
             
             this.setStatus('fa-check-circle', 'Data berhasil dimuat!', 'success');
         },
@@ -663,6 +783,7 @@ function kasirApp() {
                 history: this.history,
                 members: this.members,
                 debts: this.debts,
+                notifications: this.notifications,
                 timestamp: new Date().toISOString()
             };
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -691,6 +812,7 @@ function kasirApp() {
                     if (data.history) this.history = data.history;
                     if (data.members) this.members = data.members;
                     if (data.debts) this.debts = data.debts;
+                    if (data.notifications) this.notifications = data.notifications;
                     this.saveAll();
                     this.setStatus('fa-check-circle', 'Restore berhasil!', 'success');
                 } catch (err) {
@@ -736,6 +858,13 @@ function kasirApp() {
                 discountAmount: this.discountAmount,
                 total: this.grandTotal
             });
+            
+            this.addNotification(
+                `🧾 Transaksi baru: ${this.cart.length} item, total Rp ${Math.round(this.grandTotal).toLocaleString()}`,
+                'transaksi',
+                'Transaksi Baru'
+            );
+            
             this.saveAll();
         },
         
@@ -835,7 +964,6 @@ function kasirApp() {
             const ctx = document.getElementById('salesChart')?.getContext('2d');
             if (!ctx) return;
             
-            // Hapus chart lama jika ada
             if (window.salesChartInstance) {
                 window.salesChartInstance.destroy();
             }
@@ -869,9 +997,7 @@ function kasirApp() {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { 
-                            display: false 
-                        },
+                        legend: { display: false },
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
@@ -894,13 +1020,6 @@ function kasirApp() {
                     }
                 }
             });
-        },
-        
-        checkLowStock() {
-            const lowStock = this.lowStockAlerts;
-            if (lowStock.length > 0) {
-                console.log('⚠️ Stok menipis:', lowStock);
-            }
         },
         
         // ===== PRINT =====
