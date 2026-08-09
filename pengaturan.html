@@ -10,6 +10,23 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="style.css" />
 
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        * { font-family: 'Inter', sans-serif; }
+        .gradient-primary { background: linear-gradient(145deg, #0f2a44, #1a5f7a); }
+        .hover-lift { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .hover-lift:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 20px 40px -12px rgba(0,0,0,0.15); }
+        .dark .hover-lift:hover { box-shadow: 0 20px 40px -12px rgba(0,0,0,0.4); }
+        
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #1a5f7a, #4a9ab8); border-radius: 10px; }
+        .dark ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #3a6a8a, #5a9ab8); }
+        
+        .setting-icon { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .setting-icon:hover { transform: rotate(15deg) scale(1.1); }
+    </style>
+
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -17,56 +34,70 @@
                 extend: {
                     colors: {
                         primary: { 500: '#1a5f7a', 600: '#154c62', 700: '#103949' }
-                    }
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
                 }
             }
         }
     </script>
 </head>
 
-<body x-data="kasirApp()" x-init="init()" :class="darkMode ? 'dark' : ''" class="min-h-screen p-3 md:p-5 transition-colors duration-300">
+<body x-data="kasirApp()" x-init="init()" :class="darkMode ? 'dark' : ''" class="min-h-screen p-3 md:p-5 transition-colors duration-500 bg-gray-50 dark:bg-[#0b1320]">
 
-    <!-- HEADER -->
-    <header class="relative bg-gradient-to-r from-[#0f2a44] to-[#1a5f7a] text-white rounded-2xl p-4 mb-4 shadow-xl">
-        <button @click="toggleTheme()" class="absolute right-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 transition-all flex items-center justify-center">
-            <i class="fas" :class="darkMode ? 'fa-sun' : 'fa-moon'"></i>
+    <!-- HEADER PREMIUM -->
+    <header class="relative rounded-2xl p-5 mb-4 overflow-hidden gradient-primary shadow-2xl shadow-[#0f2a44]/30">
+        <div class="absolute inset-0 opacity-10">
+            <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <circle cx="80" cy="20" r="40" fill="white" />
+                <circle cx="20" cy="80" r="30" fill="white" />
+                <circle cx="50" cy="50" r="20" fill="white" />
+            </svg>
+        </div>
+        <button @click="toggleTheme()" 
+                class="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-300 flex items-center justify-center backdrop-blur-sm border border-white/10 hover:scale-110">
+            <i class="fas text-lg" :class="darkMode ? 'fa-sun text-yellow-300' : 'fa-moon text-white'"></i>
         </button>
-        <div class="text-center">
-            <h1 class="text-xl font-bold"><i class="fas fa-cog mr-2"></i>Pengaturan</h1>
-            <p class="text-xs opacity-80 mt-0.5" x-text="datetime"></p>
+        <div class="text-center relative z-10">
+            <div class="flex items-center justify-center gap-3 mb-1">
+                <div class="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center border border-white/20">
+                    <i class="fas fa-sliders-h text-2xl text-white"></i>
+                </div>
+                <h1 class="text-2xl font-extrabold tracking-tight text-white">Pengaturan<span class="text-blue-200">Aplikasi</span></h1>
+            </div>
+            <p class="text-sm text-blue-100/80 font-light" x-text="datetime"></p>
         </div>
     </header>
 
-    <!-- NAVIGASI -->
-    <nav class="bg-white dark:bg-[#15202b] rounded-2xl p-2 mb-4 shadow-sm">
-        <div class="grid grid-cols-5 gap-1">
-            <a href="index.html" class="py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-[#1a2835] text-gray-500 dark:text-gray-400 text-xs font-semibold flex flex-col items-center gap-0.5 transition-all">
+    <!-- NAVIGASI PREMIUM -->
+    <nav class="bg-white/80 dark:bg-[#15202b]/80 backdrop-blur-xl rounded-2xl p-1.5 mb-4 shadow-lg shadow-gray-200/50 dark:shadow-black/30 border border-gray-100/50 dark:border-gray-800/50">
+        <div class="grid grid-cols-5 gap-0.5">
+            <a href="index.html" class="py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-[#1a2835] text-gray-500 dark:text-gray-400 text-xs font-semibold flex flex-col items-center gap-1 transition-all duration-300">
                 <i class="fas fa-home text-base"></i><span>Beranda</span>
             </a>
-            <a href="produk.html" class="py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-[#1a2835] text-gray-500 dark:text-gray-400 text-xs font-semibold flex flex-col items-center gap-0.5 transition-all">
+            <a href="produk.html" class="py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-[#1a2835] text-gray-500 dark:text-gray-400 text-xs font-semibold flex flex-col items-center gap-1 transition-all duration-300">
                 <i class="fas fa-boxes text-base"></i><span>Produk</span>
             </a>
-            <a href="laporan.html" class="py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-[#1a2835] text-gray-500 dark:text-gray-400 text-xs font-semibold flex flex-col items-center gap-0.5 transition-all">
+            <a href="laporan.html" class="py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-[#1a2835] text-gray-500 dark:text-gray-400 text-xs font-semibold flex flex-col items-center gap-1 transition-all duration-300">
                 <i class="fas fa-chart-bar text-base"></i><span>Laporan</span>
             </a>
-            <a href="wa.html" class="py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-[#1a2835] text-gray-500 dark:text-gray-400 text-xs font-semibold flex flex-col items-center gap-0.5 transition-all">
+            <a href="wa.html" class="py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-[#1a2835] text-gray-500 dark:text-gray-400 text-xs font-semibold flex flex-col items-center gap-1 transition-all duration-300">
                 <i class="fab fa-whatsapp text-base"></i><span>WhatsApp</span>
             </a>
-            <a href="pengaturan.html" class="py-2.5 rounded-xl bg-[#1a5f7a] text-white text-xs font-semibold flex flex-col items-center gap-0.5 transition-all">
-                <i class="fas fa-cog text-base"></i><span>Settings</span>
+            <a href="pengaturan.html" class="py-3 rounded-xl bg-[#1a5f7a] text-white text-xs font-semibold flex flex-col items-center gap-1 transition-all duration-300 shadow-lg shadow-[#1a5f7a]/30">
+                <i class="fas fa-sliders-h text-base"></i><span>Settings</span>
             </a>
         </div>
     </nav>
 
-    <!-- ===== PENGATURAN ===== -->
+    <!-- PENGATURAN -->
     <div class="space-y-3">
         
         <!-- Tema -->
-        <div class="bg-white dark:bg-[#15202b] rounded-2xl p-4 shadow-sm">
+        <div class="bg-white/80 dark:bg-[#15202b]/80 backdrop-blur-xl rounded-2xl p-4 shadow-lg shadow-gray-200/50 dark:shadow-black/30 border border-gray-100/50 dark:border-gray-800/50 transition-all duration-300 hover-lift">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                        <i class="fas fa-palette text-purple-500"></i>
+                    <div class="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center setting-icon">
+                        <i class="fas fa-palette text-purple-500 text-lg"></i>
                     </div>
                     <div>
                         <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">Tema</p>
@@ -74,8 +105,8 @@
                     </div>
                 </div>
                 <button @click="toggleTheme()" 
-                        class="px-4 py-2 rounded-xl text-sm font-medium transition-all"
-                        :class="darkMode ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-700'">
+                        class="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 hover:scale-105 active:scale-95"
+                        :class="darkMode ? 'bg-gradient-to-r from-gray-700 to-gray-800 text-white shadow-lg shadow-gray-800/30' : 'bg-gradient-to-r from-gray-200 to-gray-300 text-gray-700 shadow-lg shadow-gray-300/30'">
                     <i class="fas" :class="darkMode ? 'fa-sun' : 'fa-moon'"></i>
                     <span x-text="darkMode ? ' Mode Terang' : ' Mode Gelap'"></span>
                 </button>
@@ -83,10 +114,10 @@
         </div>
 
         <!-- Data -->
-        <div class="bg-white dark:bg-[#15202b] rounded-2xl p-4 shadow-sm">
+        <div class="bg-white/80 dark:bg-[#15202b]/80 backdrop-blur-xl rounded-2xl p-4 shadow-lg shadow-gray-200/50 dark:shadow-black/30 border border-gray-100/50 dark:border-gray-800/50 transition-all duration-300 hover-lift">
             <div class="flex items-center gap-3 mb-3">
-                <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                    <i class="fas fa-database text-blue-500"></i>
+                <div class="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center setting-icon">
+                    <i class="fas fa-database text-blue-500 text-lg"></i>
                 </div>
                 <div>
                     <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">Manajemen Data</p>
@@ -94,52 +125,59 @@
                 </div>
             </div>
             <div class="flex gap-2 flex-wrap">
-                <button @click="saveData()" class="flex-1 min-w-[80px] py-2.5 rounded-xl bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium transition-all flex items-center justify-center gap-2">
+                <button @click="saveData()" class="flex-1 min-w-[70px] py-2.5 rounded-xl bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white text-sm font-medium transition-all duration-300 hover:shadow-xl hover:shadow-gray-500/30 hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">
                     <i class="fas fa-save"></i> Simpan
                 </button>
-                <button @click="loadData()" class="flex-1 min-w-[80px] py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-600 text-white text-sm font-medium transition-all flex items-center justify-center gap-2">
+                <button @click="loadData()" class="flex-1 min-w-[70px] py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white text-sm font-medium transition-all duration-300 hover:shadow-xl hover:shadow-cyan-500/30 hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">
                     <i class="fas fa-folder-open"></i> Load
                 </button>
-                <button @click="exportBackup()" class="flex-1 min-w-[80px] py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium transition-all flex items-center justify-center gap-2">
+                <button @click="exportBackup()" class="flex-1 min-w-[70px] py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white text-sm font-medium transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/30 hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">
                     <i class="fas fa-file-export"></i> Backup
                 </button>
-                <button @click="importBackup()" class="flex-1 min-w-[80px] py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-all flex items-center justify-center gap-2">
+                <button @click="importBackup()" class="flex-1 min-w-[70px] py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white text-sm font-medium transition-all duration-300 hover:shadow-xl hover:shadow-orange-500/30 hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">
                     <i class="fas fa-file-import"></i> Restore
                 </button>
-                <button @click="resetAll()" class="flex-1 min-w-[80px] py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-medium transition-all flex items-center justify-center gap-2">
-                    <i class="fas fa-trash"></i> Reset
+                <button @click="resetAll()" class="flex-1 min-w-[70px] py-2.5 rounded-xl bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white text-sm font-medium transition-all duration-300 hover:shadow-xl hover:shadow-red-500/30 hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">
+                    <i class="fas fa-trash-alt"></i> Reset
                 </button>
                 <input type="file" id="importFile" accept=".json" class="hidden" @change="handleImport($event)">
             </div>
         </div>
 
         <!-- Info -->
-        <div class="bg-white dark:bg-[#15202b] rounded-2xl p-4 shadow-sm">
+        <div class="bg-white/80 dark:bg-[#15202b]/80 backdrop-blur-xl rounded-2xl p-4 shadow-lg shadow-gray-200/50 dark:shadow-black/30 border border-gray-100/50 dark:border-gray-800/50 transition-all duration-300 hover-lift">
             <div class="flex items-center gap-3 mb-2">
-                <div class="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                    <i class="fas fa-info-circle text-green-500"></i>
+                <div class="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center setting-icon">
+                    <i class="fas fa-info-circle text-green-500 text-lg"></i>
                 </div>
                 <div>
                     <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">Tentang Aplikasi</p>
-                    <p class="text-xs text-gray-400">Kasir Scan Pro v2.0</p>
+                    <p class="text-xs text-gray-400">Kasir Scan Pro v3.0</p>
                 </div>
             </div>
-            <div class="text-xs text-gray-400 space-y-1">
-                <p>📦 Total Produk: <span class="font-semibold text-gray-600 dark:text-gray-300" x-text="Object.keys(productDB).length"></span></p>
-                <p>📊 Total Transaksi: <span class="font-semibold text-gray-600 dark:text-gray-300" x-text="history.length"></span></p>
-                <p>💾 Data tersimpan di Local Storage</p>
+            <div class="text-xs text-gray-400 space-y-1.5 bg-gray-50/80 dark:bg-[#1a2835]/80 rounded-xl p-3 border border-gray-100 dark:border-gray-800">
+                <div class="flex justify-between">
+                    <span>📦 Total Produk</span>
+                    <span class="font-semibold text-gray-600 dark:text-gray-300" x-text="Object.keys(productDB).length"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span>📊 Total Transaksi</span>
+                    <span class="font-semibold text-gray-600 dark:text-gray-300" x-text="history.length"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span>💾 Penyimpanan</span>
+                    <span class="font-semibold text-gray-600 dark:text-gray-300">Local Storage</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>⚡ Status</span>
+                    <span class="font-semibold text-emerald-500 flex items-center gap-1">
+                        <span class="pulse-dot w-2 h-2 rounded-full bg-emerald-500 inline-block"></span> Aktif
+                    </span>
+                </div>
             </div>
-        </div>
-
-        <!-- Tombol Bantuan -->
-        <div class="flex gap-2">
-            <button onclick="window.location.href='index.html'" class="flex-1 py-3 rounded-xl bg-[#1a5f7a] hover:bg-[#154c62] text-white font-semibold text-sm transition-all">
-                <i class="fas fa-home mr-1.5"></i> Kembali ke Beranda
-            </button>
         </div>
     </div>
 
     <script src="app.js"></script>
-    <script src="script.js"></script>
 </body>
 </html>
