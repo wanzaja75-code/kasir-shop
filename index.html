@@ -97,9 +97,9 @@
 
 <body x-data="kasirApp()" x-init="init()" :class="darkMode ? 'dark' : ''" class="min-h-screen p-3 md:p-5 transition-colors duration-500 bg-gray-50 dark:bg-[#0b1320]">
 
-    <!-- ===== HEADER PREMIUM (SIMETRIS) ===== -->
+    <!-- ===== HEADER PREMIUM (FIX - Tombol Bisa Diklik) ===== -->
 <header class="relative rounded-2xl p-4 md:p-5 mb-4 overflow-hidden gradient-primary shadow-2xl shadow-[#0f2a44]/30">
-    <div class="absolute inset-0 opacity-10">
+    <div class="absolute inset-0 opacity-10 pointer-events-none">
         <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
             <circle cx="80" cy="20" r="40" fill="white" />
             <circle cx="20" cy="80" r="30" fill="white" />
@@ -108,25 +108,21 @@
     </div>
     
     <!-- ===== KIRI: NOTIFICATION BELL ===== -->
-    <div class="absolute left-3 md:left-4 top-1/2 -translate-y-1/2">
-        <button @click="toggleNotificationModal()" 
-                class="w-9 h-9 md:w-10 md:h-10 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-300 flex items-center justify-center backdrop-blur-sm border border-white/10 hover:scale-110 relative">
-            <i class="fas fa-bell text-white text-base md:text-lg"></i>
-            <!-- Badge -->
-            <span x-show="unreadCount > 0" 
-                  class="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center animate-pulse border-2 border-white">
-                <span x-text="unreadCount > 9 ? '9+' : unreadCount"></span>
-            </span>
-        </button>
-    </div>
+    <button @click="toggleNotificationModal()" 
+            class="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 z-20 w-9 h-9 md:w-10 md:h-10 rounded-full bg-white/15 hover:bg-white/25 transition-all duration-300 flex items-center justify-center backdrop-blur-sm border border-white/20 hover:scale-110 hover:border-white/40 focus:outline-none active:scale-95">
+        <i class="fas fa-bell text-white text-base md:text-lg"></i>
+        <!-- Badge -->
+        <span x-show="unreadCount > 0" 
+              class="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center animate-pulse border-2 border-white shadow-lg shadow-red-500/50">
+            <span x-text="unreadCount > 9 ? '9+' : unreadCount"></span>
+        </span>
+    </button>
     
     <!-- ===== KANAN: DARK MODE TOGGLE ===== -->
-    <div class="absolute right-3 md:right-4 top-1/2 -translate-y-1/2">
-        <button @click="toggleTheme()" 
-                class="w-9 h-9 md:w-10 md:h-10 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-300 flex items-center justify-center backdrop-blur-sm border border-white/10 hover:scale-110">
-            <i class="fas text-base md:text-lg" :class="darkMode ? 'fa-sun text-yellow-300' : 'fa-moon text-white'"></i>
-        </button>
-    </div>
+    <button @click="toggleTheme()" 
+            class="absolute right-3 md:right-4 top-1/2 -translate-y-1/2 z-20 w-9 h-9 md:w-10 md:h-10 rounded-full bg-white/15 hover:bg-white/25 transition-all duration-300 flex items-center justify-center backdrop-blur-sm border border-white/20 hover:scale-110 hover:border-white/40 focus:outline-none active:scale-95">
+        <i class="fas text-base md:text-lg" :class="darkMode ? 'fa-sun text-yellow-300' : 'fa-moon text-white'"></i>
+    </button>
     
     <!-- ===== TENGAH: TITLE ===== -->
     <div class="text-center relative z-10 px-12 md:px-16">
@@ -555,4 +551,4 @@
 
     <script src="app.js"></script>
 </body>
-</html>
+    </html>
