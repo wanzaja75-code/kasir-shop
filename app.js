@@ -39,24 +39,24 @@ function kasirApp() {
         ],
         activeCategory: 'all',
         
-        // Products
+        // Products (dengan diskon produk)
         productDB: JSON.parse(localStorage.getItem('productDB')) || {
-            "8991234567890": { name: "Indomie Goreng", price: 3500, category: "Makanan", stock: 50, unit: "Pcs" },
-            "8991234567891": { name: "Indomie Kuah", price: 3500, category: "Makanan", stock: 40, unit: "Pcs" },
-            "8991234567892": { name: "Teh Pucuk 350ml", price: 4500, category: "Minuman", stock: 30, unit: "Pcs" },
-            "8991234567893": { name: "Aqua 600ml", price: 3000, category: "Minuman", stock: 25, unit: "Pcs" },
-            "8991234567894": { name: "Roti Tawar", price: 12000, category: "Makanan", stock: 15, unit: "Pack" },
-            "8991234567895": { name: "Mie Sedap Goreng", price: 3200, category: "Makanan", stock: 45, unit: "Pcs" },
-            "8991234567896": { name: "Mie Sedap Kuah", price: 3200, category: "Makanan", stock: 35, unit: "Pcs" },
-            "8991234567897": { name: "Chitato 68g", price: 8500, category: "Snack", stock: 20, unit: "Pcs" },
-            "8991234567898": { name: "Pocky Strawberry", price: 9500, category: "Snack", stock: 18, unit: "Box" },
-            "8991234567899": { name: "Pocky Chocolate", price: 9500, category: "Snack", stock: 22, unit: "Box" },
-            "1234567890123": { name: "Coca Cola 1.5L", price: 15000, category: "Minuman", stock: 12, unit: "Pcs" },
-            "9876543210987": { name: "Pepsi 1.5L", price: 14000, category: "Minuman", stock: 10, unit: "Pcs" },
-            "1111111111111": { name: "Sprite 1.5L", price: 14000, category: "Minuman", stock: 8, unit: "Pcs" },
-            "7777777777777": { name: "Fanta 1.5L", price: 14000, category: "Minuman", stock: 5, unit: "Pcs" },
-            "8888888888888": { name: "Marlboro Red", price: 28000, category: "Rokok", stock: 30, unit: "Pack" },
-            "9999999999999": { name: "Sampoerna Mild", price: 26000, category: "Rokok", stock: 25, unit: "Pack" },
+            "8991234567890": { name: "Indomie Goreng", price: 3500, category: "Makanan", stock: 50, unit: "Pcs", diskon: 0 },
+            "8991234567891": { name: "Indomie Kuah", price: 3500, category: "Makanan", stock: 40, unit: "Pcs", diskon: 0 },
+            "8991234567892": { name: "Teh Pucuk 350ml", price: 4500, category: "Minuman", stock: 30, unit: "Pcs", diskon: 0 },
+            "8991234567893": { name: "Aqua 600ml", price: 3000, category: "Minuman", stock: 25, unit: "Pcs", diskon: 0 },
+            "8991234567894": { name: "Roti Tawar", price: 12000, category: "Makanan", stock: 15, unit: "Pack", diskon: 0 },
+            "8991234567895": { name: "Mie Sedap Goreng", price: 3200, category: "Makanan", stock: 45, unit: "Pcs", diskon: 0 },
+            "8991234567896": { name: "Mie Sedap Kuah", price: 3200, category: "Makanan", stock: 35, unit: "Pcs", diskon: 0 },
+            "8991234567897": { name: "Chitato 68g", price: 8500, category: "Snack", stock: 20, unit: "Pcs", diskon: 5 },
+            "8991234567898": { name: "Pocky Strawberry", price: 9500, category: "Snack", stock: 18, unit: "Box", diskon: 0 },
+            "8991234567899": { name: "Pocky Chocolate", price: 9500, category: "Snack", stock: 22, unit: "Box", diskon: 0 },
+            "1234567890123": { name: "Coca Cola 1.5L", price: 15000, category: "Minuman", stock: 12, unit: "Pcs", diskon: 0 },
+            "9876543210987": { name: "Pepsi 1.5L", price: 14000, category: "Minuman", stock: 10, unit: "Pcs", diskon: 0 },
+            "1111111111111": { name: "Sprite 1.5L", price: 14000, category: "Minuman", stock: 8, unit: "Pcs", diskon: 0 },
+            "7777777777777": { name: "Fanta 1.5L", price: 14000, category: "Minuman", stock: 5, unit: "Pcs", diskon: 0 },
+            "8888888888888": { name: "Marlboro Red", price: 28000, category: "Rokok", stock: 30, unit: "Pack", diskon: 0 },
+            "9999999999999": { name: "Sampoerna Mild", price: 26000, category: "Rokok", stock: 25, unit: "Pack", diskon: 0 },
         },
         
         // Cart
@@ -65,9 +65,10 @@ function kasirApp() {
         // Discount & Payment
         discount: 0,
         payment: 0,
+        paymentMethod: 'tunai', // tunai, qris, debit, ewallet
         
         // New Product
-        newProduct: { barcode: '', name: '', category: 'Makanan', unit: 'Pcs', price: '', stock: 0 },
+        newProduct: { barcode: '', name: '', category: 'Makanan', unit: 'Pcs', price: '', stock: 0, diskon: 0 },
         
         // Upload
         uploadResult: { message: '', type: '' },
@@ -80,7 +81,7 @@ function kasirApp() {
         // History
         history: JSON.parse(localStorage.getItem('kasirHistory') || '[]'),
         
-        // ===== MEMBER (FIX - tambahkan diskon) =====
+        // ===== MEMBER =====
         members: JSON.parse(localStorage.getItem('members')) || [
             { id: 1, name: "Budi Santoso", phone: "08123456789", poin: 150, tier: "Silver", diskon: 5 },
             { id: 2, name: "Siti Rahayu", phone: "08198765432", poin: 450, tier: "Gold", diskon: 10 },
@@ -97,6 +98,10 @@ function kasirApp() {
         // ===== NOTIFIKASI =====
         notifications: JSON.parse(localStorage.getItem('notifications')) || [],
         
+        // ===== LAPORAN BULANAN =====
+        filterBulan: new Date().getMonth(),
+        filterTahun: new Date().getFullYear(),
+        
         // ===== COMPUTED =====
         get subtotal() {
             return this.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
@@ -111,8 +116,19 @@ function kasirApp() {
         get diskonMemberAmount() {
             return (this.subtotal * this.memberDiskon) / 100;
         },
+        // Diskon produk (per item)
+        get diskonProdukAmount() {
+            return this.cart.reduce((sum, item) => {
+                const product = this.productDB[item.barcode];
+                const diskon = product?.diskon || 0;
+                return sum + ((item.price * diskon / 100) * item.qty);
+            }, 0);
+        },
+        get totalDiskonProduk() {
+            return this.diskonProdukAmount;
+        },
         get grandTotal() {
-            return this.subtotal - this.discountAmount - this.diskonMemberAmount;
+            return this.subtotal - this.discountAmount - this.diskonMemberAmount - this.diskonProdukAmount;
         },
         get change() {
             return (parseFloat(this.payment) || 0) - this.grandTotal;
@@ -181,6 +197,21 @@ function kasirApp() {
         },
         get unreadCount() {
             return this.notifications.filter(n => !n.read).length;
+        },
+        
+        // Laporan Bulanan
+        get filteredHistory() {
+            return this.history.filter(t => {
+                const date = new Date(t.date);
+                return date.getMonth() === this.filterBulan && 
+                       date.getFullYear() === this.filterTahun;
+            });
+        },
+        get totalBulanan() {
+            return this.filteredHistory.reduce((sum, t) => sum + t.total, 0);
+        },
+        get totalTransaksiBulanan() {
+            return this.filteredHistory.length;
         },
         
         // ===== NAVIGASI =====
@@ -286,7 +317,8 @@ function kasirApp() {
                     name: product.name,
                     price: product.price,
                     qty: 1,
-                    unit: product.unit || 'Pcs'
+                    unit: product.unit || 'Pcs',
+                    diskon: product.diskon || 0
                 });
             }
             
@@ -356,7 +388,7 @@ function kasirApp() {
         },
         
         addNewProduct() {
-            const { barcode, name, category, unit, price, stock } = this.newProduct;
+            const { barcode, name, category, unit, price, stock, diskon } = this.newProduct;
             if (!barcode || !name || !price || isNaN(price) || price <= 0) {
                 this.setStatus('fa-exclamation-circle', 'Isi semua data dengan benar!', 'error');
                 return;
@@ -370,9 +402,10 @@ function kasirApp() {
                 price: parseInt(price), 
                 category, 
                 unit: unit || 'Pcs',
-                stock: parseInt(stock) || 0
+                stock: parseInt(stock) || 0,
+                diskon: parseFloat(diskon) || 0
             };
-            this.newProduct = { barcode: '', name: '', category: 'Makanan', unit: 'Pcs', price: '', stock: 0 };
+            this.newProduct = { barcode: '', name: '', category: 'Makanan', unit: 'Pcs', price: '', stock: 0, diskon: 0 };
             this.setStatus('fa-check-circle', `"${name}" berhasil ditambahkan!`, 'success');
             this.saveAll();
         },
@@ -627,7 +660,7 @@ function kasirApp() {
             });
         },
         
-        // ===== MEMBER (FIX) =====
+        // ===== MEMBER =====
         selectMember(id) {
             if (!id) {
                 this.selectedMember = null;
@@ -635,7 +668,6 @@ function kasirApp() {
             }
             const member = this.members.find(m => m.id === parseInt(id));
             if (member) {
-                // Pastikan diskon ada
                 if (member.diskon === undefined) {
                     member.diskon = this.getDiskonByTier(member.tier);
                 }
@@ -695,6 +727,17 @@ function kasirApp() {
                 'Bronze': 0
             };
             return diskonMap[tier] || 0;
+        },
+        
+        // ===== POIN MEMBER =====
+        getPoinRate(tier) {
+            const rateMap = {
+                'Platinum': 3,
+                'Gold': 2,
+                'Silver': 1,
+                'Bronze': 1
+            };
+            return rateMap[tier] || 1;
         },
         
         deleteMember(id) {
@@ -812,7 +855,6 @@ function kasirApp() {
             if (history) this.history = JSON.parse(history);
             if (members) {
                 this.members = JSON.parse(members);
-                // FIX: Tambahkan diskon ke member lama yang tidak punya
                 this.members = this.members.map(m => {
                     if (m.diskon === undefined) {
                         m.diskon = this.getDiskonByTier(m.tier);
@@ -824,7 +866,6 @@ function kasirApp() {
             if (notifications) this.notifications = JSON.parse(notifications);
             if (selectedMember) {
                 this.selectedMember = JSON.parse(selectedMember);
-                // FIX: Pastikan selected member punya diskon
                 if (this.selectedMember && this.selectedMember.diskon === undefined) {
                     this.selectedMember.diskon = this.getDiskonByTier(this.selectedMember.tier);
                 }
@@ -869,7 +910,6 @@ function kasirApp() {
                     if (data.history) this.history = data.history;
                     if (data.members) {
                         this.members = data.members;
-                        // FIX: Tambahkan diskon ke member lama
                         this.members = this.members.map(m => {
                             if (m.diskon === undefined) {
                                 m.diskon = this.getDiskonByTier(m.tier);
@@ -913,8 +953,12 @@ function kasirApp() {
             alert(msg);
         },
         
+        // ===== TRANSAKSI DENGAN POIN =====
         saveTransaction() {
             if (this.cart.length === 0) return;
+            
+            const totalBelanja = this.grandTotal;
+            
             this.history.push({
                 id: Date.now(),
                 date: new Date().toISOString(),
@@ -924,16 +968,134 @@ function kasirApp() {
                 discountAmount: this.discountAmount,
                 diskonMember: this.memberDiskon,
                 diskonMemberAmount: this.diskonMemberAmount,
-                total: this.grandTotal
+                diskonProdukAmount: this.diskonProdukAmount,
+                paymentMethod: this.paymentMethod,
+                total: totalBelanja
             });
             
+            // ===== POIN MEMBER =====
+            if (this.selectedMember) {
+                const member = this.members.find(m => m.id === this.selectedMember.id);
+                if (member) {
+                    const poinRate = this.getPoinRate(member.tier);
+                    const poinDapat = Math.floor(totalBelanja / 1000) * poinRate;
+                    
+                    if (poinDapat > 0) {
+                        member.poin += poinDapat;
+                        const tierLama = member.tier;
+                        member.tier = this.getTier(member.poin);
+                        member.diskon = this.getDiskonByTier(member.tier);
+                        
+                        this.selectedMember = member;
+                        
+                        let notifMsg = `⭐ ${member.name} mendapat ${poinDapat} poin! (Total: ${member.poin} poin)`;
+                        if (tierLama !== member.tier) {
+                            notifMsg += ` 🎉 Naik tier ke ${member.tier}!`;
+                        }
+                        this.addNotification(notifMsg, 'member', 'Poin Bertambah');
+                    }
+                }
+            }
+            
             this.addNotification(
-                `🧾 Transaksi baru: ${this.cart.length} item, total Rp ${Math.round(this.grandTotal).toLocaleString()}`,
+                `🧾 Transaksi: ${this.cart.length} item, ${this.paymentMethod}, Rp ${Math.round(totalBelanja).toLocaleString()}`,
                 'transaksi',
                 'Transaksi Baru'
             );
             
             this.saveAll();
+            
+            // Reset cart setelah transaksi
+            this.cart = [];
+            this.payment = 0;
+            this.paymentMethod = 'tunai';
+            this.discount = 0;
+        },
+        
+        // ===== NOTA PDF =====
+        downloadPDF() {
+            if (this.cart.length === 0) {
+                alert('Belum ada barang!');
+                return;
+            }
+            
+            this.saveTransaction();
+            
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            
+            // Buat HTML untuk PDF
+            const htmlContent = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Struk Belanja</title>
+                <style>
+                    body { font-family: 'Courier New', monospace; padding: 40px; max-width: 400px; margin: 0 auto; }
+                    .header { text-align: center; border-bottom: 2px dashed #333; padding-bottom: 10px; margin-bottom: 10px; }
+                    .header h1 { font-size: 20px; margin: 0; color: #0f2a44; }
+                    .header p { font-size: 11px; color: #666; margin: 2px 0; }
+                    .items { padding: 10px 0; }
+                    .item { display: flex; justify-content: space-between; padding: 3px 0; font-size: 13px; }
+                    .total { border-top: 2px dashed #333; padding-top: 10px; margin-top: 10px; }
+                    .total-row { display: flex; justify-content: space-between; font-size: 13px; }
+                    .grand-total { font-size: 20px; font-weight: bold; color: #0f2a44; border-top: 2px solid #333; padding-top: 6px; margin-top: 6px; }
+                    .footer { text-align: center; font-size: 11px; color: #999; margin-top: 12px; padding-top: 12px; border-top: 2px dashed #333; }
+                    .method { font-size: 12px; color: #555; margin-top: 4px; }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h1>🧾 STRUK BELANJA</h1>
+                    <p>${dateStr} ${timeStr}</p>
+                </div>
+                <div class="items">
+                    ${this.cart.map(item => `
+                        <div class="item">
+                            <span>${item.name} x${item.qty}</span>
+                            <span>Rp ${(item.price * item.qty).toLocaleString()}</span>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="total">
+                    <div class="total-row"><span>Subtotal</span><span>Rp ${this.subtotal.toLocaleString()}</span></div>
+                    ${this.diskonProdukAmount > 0 ? `<div class="total-row" style="color:#666;"><span>Diskon Produk</span><span>-Rp ${Math.round(this.diskonProdukAmount).toLocaleString()}</span></div>` : ''}
+                    ${this.memberDiskon > 0 ? `<div class="total-row" style="color:#666;"><span>Diskon Member (${this.memberDiskon}%)</span><span>-Rp ${Math.round(this.diskonMemberAmount).toLocaleString()}</span></div>` : ''}
+                    ${this.discount > 0 ? `<div class="total-row" style="color:#666;"><span>Diskon (${this.discount}%)</span><span>-Rp ${Math.round(this.discountAmount).toLocaleString()}</span></div>` : ''}
+                    <div class="grand-total">
+                        <span>TOTAL</span>
+                        <span>Rp ${Math.round(this.grandTotal).toLocaleString()}</span>
+                    </div>
+                    ${this.payment > 0 ? `
+                        <div class="total-row" style="margin-top:4px;"><span>Bayar</span><span>Rp ${Number(this.payment).toLocaleString()}</span></div>
+                        <div class="total-row" style="font-weight:bold;color:#22a65a;"><span>Kembali</span><span>Rp ${this.change >= 0 ? this.change.toLocaleString() : '0'}</span></div>
+                    ` : ''}
+                    <div class="method">💳 Metode: ${this.getPaymentMethodLabel(this.paymentMethod)}</div>
+                </div>
+                <div class="footer">
+                    Terima kasih 🙏<br>
+                    Barang yang sudah dibeli tidak dapat ditukar
+                </div>
+            </body>
+            </html>`;
+            
+            // Buka window untuk print/save PDF
+            const win = window.open('', '_blank', 'width=500,height=700');
+            win.document.write(htmlContent);
+            win.document.close();
+            win.print();
+        },
+        
+        getPaymentMethodLabel(method) {
+            const labels = {
+                'tunai': '💵 Tunai',
+                'qris': '📱 QRIS',
+                'debit': '💳 Debit/Kredit',
+                'ewallet': '📲 E-Wallet'
+            };
+            return labels[method] || method;
         },
         
         // ===== EXPORT EXCEL LENGKAP =====
@@ -981,11 +1143,11 @@ function kasirApp() {
             if (this.history.length > 0) {
                 csv += '📄 RIWAYAT TRANSAKSI\n';
                 csv += '-'.repeat(30) + '\n';
-                csv += 'No,Tanggal,Item,Qty,Harga,Total\n';
+                csv += 'No,Tanggal,Item,Qty,Harga,Metode,Total\n';
                 this.history.forEach((t, i) => {
                     const date = new Date(t.date).toLocaleString('id-ID');
                     t.items.forEach(item => {
-                        csv += `${i+1},${date},${item.name},${item.qty},${item.price},${(item.price * item.qty)}\n`;
+                        csv += `${i+1},${date},${item.name},${item.qty},${item.price},${t.paymentMethod || 'tunai'},${(item.price * item.qty)}\n`;
                     });
                 });
             }
@@ -1005,11 +1167,11 @@ function kasirApp() {
                 alert('📭 Belum ada data transaksi!');
                 return;
             }
-            let csv = 'No,Tanggal,Item,Qty,Harga,Total\n';
+            let csv = 'No,Tanggal,Item,Qty,Harga,Metode,Total\n';
             this.history.forEach((t, i) => {
                 const date = new Date(t.date).toLocaleString('id-ID');
                 t.items.forEach(item => {
-                    csv += `${i+1},${date},${item.name},${item.qty},${item.price},${(item.price * item.qty)}\n`;
+                    csv += `${i+1},${date},${item.name},${item.qty},${item.price},${t.paymentMethod || 'tunai'},${(item.price * item.qty)}\n`;
                 });
             });
             const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
@@ -1123,6 +1285,12 @@ function kasirApp() {
                             <span>Subtotal</span>
                             <span>Rp ${this.subtotal.toLocaleString()}</span>
                         </div>
+                        ${this.diskonProdukAmount > 0 ? `
+                        <div style="display: flex; justify-content: space-between; font-size: 12px; color: #94a3b8;">
+                            <span>Diskon Produk</span>
+                            <span>-Rp ${Math.round(this.diskonProdukAmount).toLocaleString()}</span>
+                        </div>
+                        ` : ''}
                         ${this.selectedMember && this.memberDiskon > 0 ? `
                         <div style="display: flex; justify-content: space-between; font-size: 12px; color: #94a3b8;">
                             <span>Diskon Member (${this.memberDiskon}%)</span>
@@ -1149,6 +1317,10 @@ function kasirApp() {
                             <span>Rp ${this.change >= 0 ? this.change.toLocaleString() : '0'}</span>
                         </div>
                         ` : ''}
+                        <div style="display: flex; justify-content: space-between; font-size: 12px; color: #666; margin-top: 4px;">
+                            <span>Metode Pembayaran</span>
+                            <span>${this.getPaymentMethodLabel(this.paymentMethod)}</span>
+                        </div>
                     </div>
                     <div style="text-align: center; font-size: 11px; color: #94a3b8; margin-top: 12px; padding-top: 12px; border-top: 2px dashed #e2e8f0;">
                         Terima kasih 🙏
@@ -1184,6 +1356,9 @@ function kasirApp() {
             
             pesan += '\n' + '='.repeat(30) + '\n';
             pesan += `Subtotal  : Rp ${this.subtotal.toLocaleString()}\n`;
+            if (this.diskonProdukAmount > 0) {
+                pesan += `Diskon Produk : -Rp ${Math.round(this.diskonProdukAmount).toLocaleString()}\n`;
+            }
             if (this.selectedMember && this.memberDiskon > 0) {
                 pesan += `Diskon Member (${this.memberDiskon}%) : -Rp ${Math.round(this.diskonMemberAmount).toLocaleString()}\n`;
             }
@@ -1192,6 +1367,7 @@ function kasirApp() {
                 pesan += `Potongan  : -Rp ${Math.round(this.discountAmount).toLocaleString()}\n`;
             }
             pesan += `*TOTAL    : Rp ${Math.round(this.grandTotal).toLocaleString()}*\n`;
+            pesan += `Metode    : ${this.getPaymentMethodLabel(this.paymentMethod)}\n`;
             
             if (this.payment > 0) {
                 pesan += `Bayar     : Rp ${Number(this.payment).toLocaleString()}\n`;
@@ -1290,4 +1466,4 @@ function kasirApp() {
             img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgData);
         }
     }
-        }
+                }
