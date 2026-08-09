@@ -4,6 +4,17 @@
 
 function kasirApp() {
     return {
+        // ===== NAVIGASI =====
+        currentPage: 'beranda',
+        navigations: [
+            { id: 'beranda', icon: 'fa-home', label: 'Beranda' },
+            { id: 'produk', icon: 'fa-boxes', label: 'Produk' },
+            { id: 'laporan', icon: 'fa-chart-bar', label: 'Laporan' },
+            { id: 'member', icon: 'fa-user-tie', label: 'Member' },
+            { id: 'hutang', icon: 'fa-hand-holding-usd', label: 'Hutang' },
+            { id: 'pengaturan', icon: 'fa-sliders-h', label: 'Settings' }
+        ],
+        
         // ===== STATE =====
         darkMode: localStorage.getItem('theme') === 'dark',
         datetime: '',
@@ -78,6 +89,19 @@ function kasirApp() {
         // History
         history: JSON.parse(localStorage.getItem('kasirHistory') || '[]'),
         
+        // ===== MEMBER =====
+        members: JSON.parse(localStorage.getItem('members')) || [
+            { id: 1, name: "Budi Santoso", phone: "08123456789", poin: 150, tier: "Silver" },
+            { id: 2, name: "Siti Rahayu", phone: "08198765432", poin: 450, tier: "Gold" },
+            { id: 3, name: "Andi Wijaya", phone: "08155555555", poin: 1200, tier: "Platinum" },
+        ],
+        newMember: { name: '', phone: '' },
+        searchMember: '',
+        
+        // ===== HUTANG =====
+        debts: JSON.parse(localStorage.getItem('debts')) || [],
+        newDebt: { customer: '', amount: '', dueDate: '', note: '' },
+        
         // ===== COMPUTED =====
         get subtotal() {
             return this.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
@@ -138,6 +162,31 @@ function kasirApp() {
             }));
             return sorted.reverse();
         },
+        get filteredMembers() {
+            if (!this.searchMember) return this.members;
+            return this.members.filter(m => 
+                m.name.toLowerCase().includes(this.searchMember.toLowerCase()) ||
+                m.phone.includes(this.searchMember)
+            );
+        },
+        get totalDebt() {
+            return this.debts.reduce((sum, d) => sum + (d.status === 'Belum Lunas' ? d.amount : 0), 0);
+        },
+        get lowStockAlerts() {
+            return Object.entries(this.productDB)
+                .filter(([code, p]) => p.stock !== undefined && p.stock <= 5 && p.stock > 0)
+                .map(([code, p]) => ({ code, name: p.name, stock: p.stock }));
+        },
+        
+        // ===== NAVIGASI =====
+        navigateTo(page) {
+            if (this.currentPage === page) return;
+            if (this.cameraActive) {
+                this.stopCamera();
+            }
+            this.currentPage = page;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        },
         
         // ===== INIT =====
         init() {
@@ -146,6 +195,16 @@ function kasirApp() {
             if (this.darkMode) {
                 document.documentElement.classList.add('dark');
             }
+            
+            // Chart setelah DOM siap
+            setTimeout(() => {
+                this.initChart();
+            }, 500);
+            
+            // Cek stok habis setiap 5 menit
+            setInterval(() => {
+                this.checkLowStock();
+            }, 300000);
         },
         
         updateDateTime() {
@@ -462,11 +521,115 @@ function kasirApp() {
             requestAnimationFrame(() => this.scanLoop());
         },
         
+        // ===== MEMBER =====
+        addMember() {
+            if (!this.newMember.name || !this.newMember.phone) {
+                this.setStatus('fa-exclamation-circle', 'Isi nama & nomor HP!', 'error');
+                return;
+            }
+            
+            // Hitung tier berdasarkan poin (default 0)
+            const poin = 0;
+            const tier = this.getTier(poin);
+            
+            this.members.push({
+                id: Date.now(),
+                name: this.newMember.name,
+                phone: this.newMember.phone,
+                poin: poin,
+                tier: tier
+            });
+            this.newMember = { name: '', phone: '' };
+            this.saveAll();
+            this.setStatus('fa-check-circle', 'Member berhasil ditambahkan!', 'success');
+        },
+        
+        getTier(poin) {
+            if (poin >= 700) return 'Platinum';
+            if (poin >= 300) return 'Gold';
+            if (poin >= 100) return 'Silver';
+            return 'Bronze';
+        },
+        
+        deleteMember(id) {
+            if (confirm('Hapus member ini?')) {
+                this.members = this.members.filter(m => m.id !== id);
+                this.saveAll();
+                this.setStatus('fa-check-circle', 'Member dihapus!', 'success');
+            }
+        },
+        
+        usePoin(id) {
+            const member = this.members.find(m => m.id === id);
+            if (!member) return;
+            
+            const poinToUse = prompt(`🎁 Poin ${member.name}: ${member.poin}\n1 poin = Rp 100\nBerapa poin yang ingin digunakan?`);
+            if (!poinToUse) return;
+            
+            const poin = parseInt(poinToUse);
+            if (isNaN(poin) || poin <= 0 || poin > member.poin) {
+                this.setStatus('fa-exclamation-circle', 'Poin tidak valid!', 'error');
+                return;
+            }
+            
+            const diskon = poin * 100;
+            member.poin -= poin;
+            member.tier = this.getTier(member.poin);
+            
+            // Terapkan diskon ke keranjang
+            this.discount = (this.discount || 0) + (diskon / this.subtotal * 100);
+            
+            this.saveAll();
+            this.setStatus('fa-check-circle', `✅ ${member.name} menggunakan ${poin} poin (Diskon Rp ${diskon.toLocaleString()})`, 'success');
+        },
+        
+        // ===== HUTANG =====
+        addDebt() {
+            if (!this.newDebt.customer || !this.newDebt.amount || isNaN(this.newDebt.amount) || this.newDebt.amount <= 0) {
+                this.setStatus('fa-exclamation-circle', 'Isi data dengan benar!', 'error');
+                return;
+            }
+            
+            this.debts.push({
+                id: Date.now(),
+                customer: this.newDebt.customer,
+                amount: parseInt(this.newDebt.amount),
+                date: new Date().toISOString().split('T')[0],
+                dueDate: this.newDebt.dueDate || new Date(Date.now() + 7*24*60*60*1000).toISOString().split('T')[0],
+                status: 'Belum Lunas',
+                note: this.newDebt.note || ''
+            });
+            this.newDebt = { customer: '', amount: '', dueDate: '', note: '' };
+            this.saveAll();
+            this.setStatus('fa-check-circle', 'Hutang berhasil ditambahkan!', 'success');
+        },
+        
+        settleDebt(id) {
+            const debt = this.debts.find(d => d.id === id);
+            if (!debt) return;
+            
+            if (confirm(`✅ Lunasi hutang ${debt.customer} sebesar Rp ${debt.amount.toLocaleString()}?`)) {
+                debt.status = 'Lunas';
+                this.saveAll();
+                this.setStatus('fa-check-circle', `✅ Hutang ${debt.customer} lunas!`, 'success');
+            }
+        },
+        
+        deleteDebt(id) {
+            if (confirm('Hapus hutang ini?')) {
+                this.debts = this.debts.filter(d => d.id !== id);
+                this.saveAll();
+                this.setStatus('fa-check-circle', 'Hutang dihapus!', 'success');
+            }
+        },
+        
         // ===== SAVE ALL =====
         saveAll() {
             localStorage.setItem('cart', JSON.stringify(this.cart));
             localStorage.setItem('productDB', JSON.stringify(this.productDB));
             localStorage.setItem('kasirHistory', JSON.stringify(this.history));
+            localStorage.setItem('members', JSON.stringify(this.members));
+            localStorage.setItem('debts', JSON.stringify(this.debts));
         },
         
         saveData() {
@@ -478,10 +641,14 @@ function kasirApp() {
             const cart = localStorage.getItem('cart');
             const products = localStorage.getItem('productDB');
             const history = localStorage.getItem('kasirHistory');
+            const members = localStorage.getItem('members');
+            const debts = localStorage.getItem('debts');
             
             if (cart) this.cart = JSON.parse(cart);
             if (products) this.productDB = JSON.parse(products);
             if (history) this.history = JSON.parse(history);
+            if (members) this.members = JSON.parse(members);
+            if (debts) this.debts = JSON.parse(debts);
             
             this.setStatus('fa-check-circle', 'Data berhasil dimuat!', 'success');
         },
@@ -491,6 +658,8 @@ function kasirApp() {
             const data = {
                 products: this.productDB,
                 history: this.history,
+                members: this.members,
+                debts: this.debts,
                 timestamp: new Date().toISOString()
             };
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -517,6 +686,8 @@ function kasirApp() {
                     const data = JSON.parse(e.target.result);
                     if (data.products) this.productDB = data.products;
                     if (data.history) this.history = data.history;
+                    if (data.members) this.members = data.members;
+                    if (data.debts) this.debts = data.debts;
                     this.saveAll();
                     this.setStatus('fa-check-circle', 'Restore berhasil!', 'success');
                 } catch (err) {
@@ -563,6 +734,170 @@ function kasirApp() {
                 total: this.grandTotal
             });
             this.saveAll();
+        },
+        
+        // ===== EXPORT EXCEL LENGKAP =====
+        exportExcelFull() {
+            if (this.history.length === 0 && this.debts.length === 0) {
+                alert('📭 Belum ada data untuk diexport!');
+                return;
+            }
+            
+            let csv = '📊 LAPORAN KASIR SCAN PRO\n';
+            csv += '='.repeat(50) + '\n';
+            csv += `Tanggal Export: ${new Date().toLocaleString('id-ID')}\n\n`;
+            
+            // Ringkasan
+            csv += '📋 RINGKASAN\n';
+            csv += '-'.repeat(30) + '\n';
+            csv += `Total Transaksi,${this.history.length}\n`;
+            csv += `Total Penjualan,Rp ${this.totalSales.toLocaleString()}\n`;
+            csv += `Rata-rata,Rp ${Math.round(this.averageSales).toLocaleString()}\n`;
+            csv += `Total Produk Terjual,${this.totalItemsSold} pcs\n\n`;
+            
+            // Produk Terlaris
+            csv += '🏆 PRODUK TERLARIS\n';
+            csv += '-'.repeat(30) + '\n';
+            csv += 'Nama Produk,Jumlah Terjual,Total Pendapatan\n';
+            this.topProducts.forEach(p => {
+                csv += `${p.name},${p.qty} pcs,Rp ${p.total.toLocaleString()}\n`;
+            });
+            csv += '\n';
+            
+            // Hutang
+            csv += '💰 DATA HUTANG\n';
+            csv += '-'.repeat(30) + '\n';
+            csv += 'Pelanggan,Jumlah,Tanggal Jatuh Tempo,Status,Catatan\n';
+            this.debts.forEach(d => {
+                csv += `${d.customer},Rp ${d.amount.toLocaleString()},${d.dueDate},${d.status},${d.note || '-'}\n`;
+            });
+            csv += '\n';
+            
+            // Member
+            csv += '👤 DATA MEMBER\n';
+            csv += '-'.repeat(30) + '\n';
+            csv += 'Nama,No HP,Poin,Tier\n';
+            this.members.forEach(m => {
+                csv += `${m.name},${m.phone},${m.poin},${m.tier}\n`;
+            });
+            csv += '\n';
+            
+            // Riwayat Transaksi
+            if (this.history.length > 0) {
+                csv += '📄 RIWAYAT TRANSAKSI\n';
+                csv += '-'.repeat(30) + '\n';
+                csv += 'No,Tanggal,Item,Qty,Harga,Total\n';
+                this.history.forEach((t, i) => {
+                    const date = new Date(t.date).toLocaleString('id-ID');
+                    t.items.forEach(item => {
+                        csv += `${i+1},${date},${item.name},${item.qty},${item.price},${(item.price * item.qty)}\n`;
+                    });
+                });
+            }
+            
+            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Laporan_Lengkap_${new Date().toISOString().slice(0,10)}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            this.setStatus('fa-check-circle', 'Export Excel Lengkap berhasil!', 'success');
+        },
+        
+        exportExcel() {
+            if (this.history.length === 0) {
+                alert('📭 Belum ada data transaksi!');
+                return;
+            }
+            let csv = 'No,Tanggal,Item,Qty,Harga,Total\n';
+            this.history.forEach((t, i) => {
+                const date = new Date(t.date).toLocaleString('id-ID');
+                t.items.forEach(item => {
+                    csv += `${i+1},${date},${item.name},${item.qty},${item.price},${(item.price * item.qty)}\n`;
+                });
+            });
+            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Laporan_Transaksi_${new Date().toISOString().slice(0,10)}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            this.setStatus('fa-check-circle', 'Export Excel berhasil!', 'success');
+        },
+        
+        // ===== CHART.JS =====
+        initChart() {
+            const ctx = document.getElementById('salesChart')?.getContext('2d');
+            if (!ctx) return;
+            
+            // Hapus chart lama jika ada
+            if (window.salesChartInstance) {
+                window.salesChartInstance.destroy();
+            }
+            
+            const labels = this.dailySales.map(d => d.date);
+            const data = this.dailySales.map(d => d.total);
+            
+            window.salesChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels.length > 0 ? labels : ['Belum Ada Data'],
+                    datasets: [{
+                        label: 'Penjualan (Rp)',
+                        data: data.length > 0 ? data : [0],
+                        backgroundColor: [
+                            'rgba(26, 95, 122, 0.7)',
+                            'rgba(74, 154, 184, 0.7)',
+                            'rgba(26, 95, 122, 0.7)',
+                            'rgba(74, 154, 184, 0.7)',
+                            'rgba(26, 95, 122, 0.7)',
+                            'rgba(74, 154, 184, 0.7)',
+                            'rgba(26, 95, 122, 0.7)'
+                        ],
+                        borderColor: '#1a5f7a',
+                        borderWidth: 2,
+                        borderRadius: 8,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            display: false 
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Rp ' + context.raw.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) { 
+                                    if (value >= 1000000) return 'Rp ' + (value/1000000).toFixed(1) + 'Jt';
+                                    if (value >= 1000) return 'Rp ' + (value/1000).toFixed(0) + 'K';
+                                    return 'Rp ' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        },
+        
+        checkLowStock() {
+            const lowStock = this.lowStockAlerts;
+            if (lowStock.length > 0) {
+                console.log('⚠️ Stok menipis:', lowStock);
+            }
         },
         
         // ===== PRINT =====
@@ -671,7 +1006,6 @@ function kasirApp() {
             
             pesan += '\nTerima kasih 🙏';
             
-            // Simpan riwayat WA
             const waData = {
                 nomor: nomor,
                 tanggal: new Date().toLocaleString('id-ID'),
@@ -680,14 +1014,12 @@ function kasirApp() {
             this.waHistory.push(waData);
             localStorage.setItem('waHistory', JSON.stringify(this.waHistory));
             
-            // Kirim ke WhatsApp
             const url = `https://wa.me/62${nomor}?text=${encodeURIComponent(pesan)}`;
             window.open(url, '_blank');
             this.setStatus('fa-check-circle', 'Pesan WhatsApp terkirim!', 'success');
         },
         
         sendWhatsApp() {
-            // Redirect ke halaman WA
             window.location.href = 'wa.html';
         },
         
@@ -764,4 +1096,4 @@ function kasirApp() {
             img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgData);
         }
     }
-}
+        }
