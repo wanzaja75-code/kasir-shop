@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Kasir Scan - Pengaturan</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="style.css" />
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: { 500: '#1a5f7a', 600: '#154c62', 700: '#103949' }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body x-data="kasirApp()" x-init="init()" :class="darkMode ? 'dark' : ''" class="min-h-screen p-3 md:p-5 transition-colors duration-300">
+
+    <!-- HEADER -->
+    <header class="relative bg-gradient-to-r from-[#0f2a44] to-[#1a5f7a] text-white rounded-2xl p-4 mb-4 shadow-xl">
+        <button @click="toggleTheme()" class="absolute right-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 transition-all flex items-center justify-center">
+            <i class="fas" :class="darkMode ? 'fa-sun' : 'fa-moon'"></i>
+        </button>
+        <div class="text-center">
+            <h1 class="text-xl font-bold"><i class="fas fa-cog mr-2"></i>Pengaturan</h1>
+            <p class="text-xs opacity-80 mt-0.5" x-text="datetime"></p>
+        </div>
+    </header>
+
+    <!-- NAVIGASI -->
+    <nav class="bg-white dark:bg-[#15202b] rounded-2xl p-2 mb-4 shadow-sm">
+        <div class="grid grid-cols-5 gap-1">
+            <a href="index.html" class="py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-[#1a2835] text-gray-500 dark:text-gray-400 text-xs font-semibold flex flex-col items-center gap-0.5 transition-all">
+                <i class="fas fa-home text-base"></i><span>Beranda</span>
+            </a>
+            <a href="produk.html" class="py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-[#1a2835] text-gray-500 dark:text-gray-400 text-xs font-semibold flex flex-col items-center gap-0.5 transition-all">
+                <i class="fas fa-boxes text-base"></i><span>Produk</span>
+            </a>
+            <a href="laporan.html" class="py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-[#1a2835] text-gray-500 dark:text-gray-400 text-xs font-semibold flex flex-col items-center gap-0.5 transition-all">
+                <i class="fas fa-chart-bar text-base"></i><span>Laporan</span>
+            </a>
+            <a href="wa.html" class="py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-[#1a2835] text-gray-500 dark:text-gray-400 text-xs font-semibold flex flex-col items-center gap-0.5 transition-all">
+                <i class="fab fa-whatsapp text-base"></i><span>WhatsApp</span>
+            </a>
+            <a href="pengaturan.html" class="py-2.5 rounded-xl bg-[#1a5f7a] text-white text-xs font-semibold flex flex-col items-center gap-0.5 transition-all">
+                <i class="fas fa-cog text-base"></i><span>Settings</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- ===== PENGATURAN ===== -->
+    <div class="space-y-3">
+        
+        <!-- Tema -->
+        <div class="bg-white dark:bg-[#15202b] rounded-2xl p-4 shadow-sm">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                        <i class="fas fa-palette text-purple-500"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">Tema</p>
+                        <p class="text-xs text-gray-400">Ganti tema tampilan</p>
+                    </div>
+                </div>
+                <button @click="toggleTheme()" 
+                        class="px-4 py-2 rounded-xl text-sm font-medium transition-all"
+                        :class="darkMode ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-700'">
+                    <i class="fas" :class="darkMode ? 'fa-sun' : 'fa-moon'"></i>
+                    <span x-text="darkMode ? ' Mode Terang' : ' Mode Gelap'"></span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Data -->
+        <div class="bg-white dark:bg-[#15202b] rounded-2xl p-4 shadow-sm">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                    <i class="fas fa-database text-blue-500"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">Manajemen Data</p>
+                    <p class="text-xs text-gray-400">Backup & restore data</p>
+                </div>
+            </div>
+            <div class="flex gap-2 flex-wrap">
+                <button @click="saveData()" class="flex-1 min-w-[80px] py-2.5 rounded-xl bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium transition-all flex items-center justify-center gap-2">
+                    <i class="fas fa-save"></i> Simpan
+                </button>
+                <button @click="loadData()" class="flex-1 min-w-[80px] py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-600 text-white text-sm font-medium transition-all flex items-center justify-center gap-2">
+                    <i class="fas fa-folder-open"></i> Load
+                </button>
+                <button @click="exportBackup()" class="flex-1 min-w-[80px] py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium transition-all flex items-center justify-center gap-2">
+                    <i class="fas fa-file-export"></i> Backup
+                </button>
+                <button @click="importBackup()" class="flex-1 min-w-[80px] py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-all flex items-center justify-center gap-2">
+                    <i class="fas fa-file-import"></i> Restore
+                </button>
+                <button @click="resetAll()" class="flex-1 min-w-[80px] py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-medium transition-all flex items-center justify-center gap-2">
+                    <i class="fas fa-trash"></i> Reset
+                </button>
+                <input type="file" id="importFile" accept=".json" class="hidden" @change="handleImport($event)">
+            </div>
+        </div>
+
+        <!-- Info -->
+        <div class="bg-white dark:bg-[#15202b] rounded-2xl p-4 shadow-sm">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                    <i class="fas fa-info-circle text-green-500"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">Tentang Aplikasi</p>
+                    <p class="text-xs text-gray-400">Kasir Scan Pro v2.0</p>
+                </div>
+            </div>
+            <div class="text-xs text-gray-400 space-y-1">
+                <p>📦 Total Produk: <span class="font-semibold text-gray-600 dark:text-gray-300" x-text="Object.keys(productDB).length"></span></p>
+                <p>📊 Total Transaksi: <span class="font-semibold text-gray-600 dark:text-gray-300" x-text="history.length"></span></p>
+                <p>💾 Data tersimpan di Local Storage</p>
+            </div>
+        </div>
+
+        <!-- Tombol Bantuan -->
+        <div class="flex gap-2">
+            <button onclick="window.location.href='index.html'" class="flex-1 py-3 rounded-xl bg-[#1a5f7a] hover:bg-[#154c62] text-white font-semibold text-sm transition-all">
+                <i class="fas fa-home mr-1.5"></i> Kembali ke Beranda
+            </button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

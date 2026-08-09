@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Kasir Scan - Laporan</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="style.css" />
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: { 500: '#1a5f7a', 600: '#154c62', 700: '#103949' }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body x-data="kasirApp()" x-init="init()" :class="darkMode ? 'dark' : ''" class="min-h-screen p-3 md:p-5 transition-colors duration-300">
+
+    <!-- HEADER -->
+    <header class="relative bg-gradient-to-r from-[#0f2a44] to-[#1a5f7a] text-white rounded-2xl p-4 mb-4 shadow-xl">
+        <button @click="toggleTheme()" class="absolute right-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 transition-all flex items-center justify-center">
+            <i class="fas" :class="darkMode ? 'fa-sun' : 'fa-moon'"></i>
+        </button>
+        <div class="text-center">
+            <h1 class="text-xl font-bold"><i class="fas fa-chart-bar mr-2"></i>Laporan Penjualan</h1>
+            <p class="text-xs opacity-80 mt-0.5" x-text="datetime"></p>
+        </div>
+    </header>
+
+    <!-- NAVIGASI -->
+    <nav class="bg-white dark:bg-[#15202b] rounded-2xl p-2 mb-4 shadow-sm">
+        <div class="grid grid-cols-5 gap-1">
+            <a href="index.html" class="py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-[#1a2835] text-gray-500 dark:text-gray-400 text-xs font-semibold flex flex-col items-center gap-0.5 transition-all">
+                <i class="fas fa-home text-base"></i><span>Beranda</span>
+            </a>
+            <a href="produk.html" class="py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-[#1a2835] text-gray-500 dark:text-gray-400 text-xs font-semibold flex flex-col items-center gap-0.5 transition-all">
+                <i class="fas fa-boxes text-base"></i><span>Produk</span>
+            </a>
+            <a href="laporan.html" class="py-2.5 rounded-xl bg-[#1a5f7a] text-white text-xs font-semibold flex flex-col items-center gap-0.5 transition-all">
+                <i class="fas fa-chart-bar text-base"></i><span>Laporan</span>
+            </a>
+            <a href="wa.html" class="py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-[#1a2835] text-gray-500 dark:text-gray-400 text-xs font-semibold flex flex-col items-center gap-0.5 transition-all">
+                <i class="fab fa-whatsapp text-base"></i><span>WhatsApp</span>
+            </a>
+            <a href="pengaturan.html" class="py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-[#1a2835] text-gray-500 dark:text-gray-400 text-xs font-semibold flex flex-col items-center gap-0.5 transition-all">
+                <i class="fas fa-cog text-base"></i><span>Settings</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- ===== STATISTIK ===== -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
+        <div class="bg-white dark:bg-[#15202b] rounded-2xl p-3 shadow-sm text-center">
+            <p class="text-xs text-gray-400">Total Transaksi</p>
+            <p class="text-xl font-bold text-gray-800 dark:text-gray-200" x-text="history.length"></p>
+        </div>
+        <div class="bg-white dark:bg-[#15202b] rounded-2xl p-3 shadow-sm text-center">
+            <p class="text-xs text-gray-400">Total Penjualan</p>
+            <p class="text-xl font-bold text-emerald-600" x-text="'Rp ' + formatNumber(totalSales)"></p>
+        </div>
+        <div class="bg-white dark:bg-[#15202b] rounded-2xl p-3 shadow-sm text-center">
+            <p class="text-xs text-gray-400">Rata-rata</p>
+            <p class="text-xl font-bold text-blue-600" x-text="'Rp ' + formatNumber(averageSales)"></p>
+        </div>
+        <div class="bg-white dark:bg-[#15202b] rounded-2xl p-3 shadow-sm text-center">
+            <p class="text-xs text-gray-400">Produk Terjual</p>
+            <p class="text-xl font-bold text-orange-500" x-text="totalItemsSold"></p>
+        </div>
+    </div>
+
+    <!-- ===== PRODUK TERLARIS ===== -->
+    <div class="bg-white dark:bg-[#15202b] rounded-2xl p-4 mb-4 shadow-sm">
+        <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+            <i class="fas fa-trophy text-yellow-500 mr-1.5"></i> Produk Terlaris
+        </h3>
+        <div class="space-y-1">
+            <template x-for="(item, idx) in topProducts" :key="idx">
+                <div class="flex items-center gap-2 p-2 bg-gray-50 dark:bg-[#1a2835] rounded-lg">
+                    <span class="text-lg" x-text="['🥇','🥈','🥉'][idx] || '•'"></span>
+                    <span class="flex-1 text-sm font-medium text-gray-700 dark:text-gray-300" x-text="item.name"></span>
+                    <span class="text-sm font-bold text-[#1a5f7a]" x-text="item.qty + ' pcs'"></span>
+                    <span class="text-xs text-gray-400" x-text="'Rp ' + formatNumber(item.total)"></span>
+                </div>
+            </template>
+            <template x-if="topProducts.length === 0">
+                <div class="text-center text-gray-400 py-3 text-sm">Belum ada data penjualan</div>
+            </template>
+        </div>
+    </div>
+
+    <!-- ===== PENJUALAN PER HARI ===== -->
+    <div class="bg-white dark:bg-[#15202b] rounded-2xl p-4 shadow-sm">
+        <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+            <i class="fas fa-calendar-day text-blue-500 mr-1.5"></i> Penjualan per Hari (7 Hari Terakhir)
+        </h3>
+        <div class="space-y-1">
+            <template x-for="(item, idx) in dailySales" :key="idx">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-gray-500 w-24" x-text="item.date"></span>
+                    <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-5 overflow-hidden">
+                        <div class="h-full bg-gradient-to-r from-[#1a5f7a] to-[#4a9ab8] rounded-full transition-all duration-500 flex items-center justify-end pr-1" 
+                             :style="'width: ' + item.percent + '%'">
+                            <span class="text-[10px] text-white font-medium" x-text="'Rp ' + formatNumber(item.total)"></span>
+                        </div>
+                    </div>
+                </div>
+            </template>
+            <template x-if="dailySales.length === 0">
+                <div class="text-center text-gray-400 py-3 text-sm">Belum ada data penjualan</div>
+            </template>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

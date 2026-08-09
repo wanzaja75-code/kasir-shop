@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Kasir Scan - Produk</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+    <link rel="stylesheet" href="style.css" />
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: { 500: '#1a5f7a', 600: '#154c62', 700: '#103949' }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body x-data="kasirApp()" x-init="init()" :class="darkMode ? 'dark' : ''" class="min-h-screen p-3 md:p-5 transition-colors duration-300">
+
+    <!-- HEADER -->
+    <header class="relative bg-gradient-to-r from-[#0f2a44] to-[#1a5f7a] text-white rounded-2xl p-4 mb-4 shadow-xl">
+        <button @click="toggleTheme()" class="absolute right-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 transition-all flex items-center justify-center">
+            <i class="fas" :class="darkMode ? 'fa-sun' : 'fa-moon'"></i>
+        </button>
+        <div class="text-center">
+            <h1 class="text-xl font-bold"><i class="fas fa-boxes mr-2"></i>Manajemen Produk</h1>
+            <p class="text-xs opacity-80 mt-0.5" x-text="datetime"></p>
+        </div>
+    </header>
+
+    <!-- NAVIGASI -->
+    <nav class="bg-white dark:bg-[#15202b] rounded-2xl p-2 mb-4 shadow-sm">
+        <div class="grid grid-cols-5 gap-1">
+            <a href="index.html" class="py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-[#1a2835] text-gray-500 dark:text-gray-400 text-xs font-semibold flex flex-col items-center gap-0.5 transition-all">
+                <i class="fas fa-home text-base"></i><span>Beranda</span>
+            </a>
+            <a href="produk.html" class="py-2.5 rounded-xl bg-[#1a5f7a] text-white text-xs font-semibold flex flex-col items-center gap-0.5 transition-all">
+                <i class="fas fa-boxes text-base"></i><span>Produk</span>
+            </a>
+            <a href="laporan.html" class="py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-[#1a2835] text-gray-500 dark:text-gray-400 text-xs font-semibold flex flex-col items-center gap-0.5 transition-all">
+                <i class="fas fa-chart-bar text-base"></i><span>Laporan</span>
+            </a>
+            <a href="wa.html" class="py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-[#1a2835] text-gray-500 dark:text-gray-400 text-xs font-semibold flex flex-col items-center gap-0.5 transition-all">
+                <i class="fab fa-whatsapp text-base"></i><span>WhatsApp</span>
+            </a>
+            <a href="pengaturan.html" class="py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-[#1a2835] text-gray-500 dark:text-gray-400 text-xs font-semibold flex flex-col items-center gap-0.5 transition-all">
+                <i class="fas fa-cog text-base"></i><span>Settings</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- ===== TAMBAH PRODUK ===== -->
+    <div class="bg-white dark:bg-[#15202b] rounded-2xl p-4 mb-4 shadow-sm">
+        <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+            <i class="fas fa-plus-circle text-emerald-500 mr-1.5"></i> Tambah Produk Baru
+        </h3>
+        <div class="flex gap-1.5 flex-wrap">
+            <input type="text" x-model="newProduct.barcode" placeholder="Kode" class="flex-1 min-w-[50px] px-2.5 py-2 rounded-lg border-2 border-gray-200 dark:border-gray-700 dark:bg-[#1a2835] dark:text-white text-sm focus:border-[#1a5f7a] outline-none transition-all">
+            <input type="text" x-model="newProduct.name" placeholder="Nama" class="flex-1 min-w-[50px] px-2.5 py-2 rounded-lg border-2 border-gray-200 dark:border-gray-700 dark:bg-[#1a2835] dark:text-white text-sm focus:border-[#1a5f7a] outline-none transition-all">
+            <select x-model="newProduct.category" class="px-2 py-2 rounded-lg border-2 border-gray-200 dark:border-gray-700 dark:bg-[#1a2835] dark:text-white text-sm focus:border-[#1a5f7a] outline-none transition-all">
+                <option value="Makanan">🍜 Makanan</option>
+                <option value="Minuman">🥤 Minuman</option>
+                <option value="Snack">🍿 Snack</option>
+                <option value="Rokok">🚬 Rokok</option>
+                <option value="Lainnya">📦 Lainnya</option>
+            </select>
+            <select x-model="newProduct.unit" class="px-2 py-2 rounded-lg border-2 border-gray-200 dark:border-gray-700 dark:bg-[#1a2835] dark:text-white text-sm focus:border-[#1a5f7a] outline-none transition-all">
+                <option value="Pcs">Pcs</option>
+                <option value="Box">Box</option>
+                <option value="Lusin">Lusin</option>
+                <option value="Kg">Kg</option>
+                <option value="Gram">Gram</option>
+                <option value="Liter">Liter</option>
+                <option value="Pack">Pack</option>
+            </select>
+            <input type="number" x-model="newProduct.price" placeholder="Harga" class="w-20 px-2 py-2 rounded-lg border-2 border-gray-200 dark:border-gray-700 dark:bg-[#1a2835] dark:text-white text-sm focus:border-[#1a5f7a] outline-none transition-all">
+            <input type="number" x-model="newProduct.stock" placeholder="Stok" class="w-16 px-2 py-2 rounded-lg border-2 border-gray-200 dark:border-gray-700 dark:bg-[#1a2835] dark:text-white text-sm focus:border-[#1a5f7a] outline-none transition-all">
+            <button @click="addNewProduct()" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg transition-all text-sm">
+                <i class="fas fa-plus"></i> Tambah
+            </button>
+        </div>
+        <div x-show="uploadResult.message" class="mt-2 px-3 py-2 rounded-lg text-sm" :class="uploadResult.type === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'" x-text="uploadResult.message"></div>
+    </div>
+
+    <!-- ===== DAFTAR PRODUK ===== -->
+    <div class="bg-white dark:bg-[#15202b] rounded-2xl p-4 shadow-sm">
+        <div class="flex justify-between items-center mb-2">
+            <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                <i class="fas fa-list mr-1.5"></i> Daftar Produk
+                <span class="text-xs text-gray-400 ml-1" x-text="'(' + Object.keys(productDB).length + ')'"></span>
+            </h3>
+            <div class="relative">
+                <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                <input type="text" x-model="searchQuery" placeholder="Cari..." class="pl-7 pr-2 py-1 rounded-lg border-2 border-gray-200 dark:border-gray-700 dark:bg-[#1a2835] dark:text-white text-xs focus:border-[#1a5f7a] outline-none transition-all w-32">
+            </div>
+        </div>
+
+        <div class="max-h-96 overflow-y-auto">
+            <template x-for="(product, code) in productDB" :key="code">
+                <div class="flex items-center justify-between gap-1.5 p-2 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-[#1a2835] transition-all rounded-lg">
+                    <div class="flex-1 min-w-[60px]">
+                        <span class="font-medium text-sm text-gray-800 dark:text-gray-200" x-text="product.name"></span>
+                        <span class="text-xs text-gray-400 ml-1" x-text="'(' + code + ')'"></span>
+                    </div>
+                    <span class="text-xs font-semibold text-[#1a5f7a]" x-text="'Rp ' + formatNumber(product.price)"></span>
+                    <span class="text-xs text-gray-500" x-text="product.unit || 'Pcs'"></span>
+                    <span class="text-xs font-medium" :class="(product.stock || 0) > 5 ? 'text-green-600' : (product.stock || 0) > 0 ? 'text-orange-500' : 'text-red-500'" x-text="'Stok: ' + (product.stock || 0)"></span>
+                    <button @click="generateSingleBarcode(code)" class="text-xs text-orange-500 hover:text-orange-600 transition-all px-1">
+                        <i class="fas fa-barcode"></i>
+                    </button>
+                    <button @click="deleteProduct(code)" class="text-xs text-red-400 hover:text-red-600 transition-all px-1">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </template>
+            <template x-if="Object.keys(productDB).length === 0">
+                <div class="text-center text-gray-400 py-4 text-sm">Belum ada produk</div>
+            </template>
+        </div>
+    </div>
+
+    <!-- ===== MODAL BARCODE ===== -->
+    <div x-show="showBarcodeModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click.away="showBarcodeModal = false">
+        <div class="bg-white dark:bg-[#15202b] rounded-2xl p-5 max-w-xs w-full">
+            <h3 class="text-sm font-bold text-gray-800 dark:text-gray-200 mb-3">
+                <i class="fas fa-barcode text-orange-500 mr-1.5"></i> Barcode
+            </h3>
+            <div class="flex justify-center p-3 bg-gray-50 dark:bg-[#1a2835] rounded-xl mb-3">
+                <svg id="barcodeSVG" width="180" height="80"></svg>
+            </div>
+            <div class="flex gap-2">
+                <button @click="downloadBarcode()" class="flex-1 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-semibold text-xs transition-all">
+                    <i class="fas fa-download"></i> Download
+                </button>
+                <button @click="showBarcodeModal = false" class="flex-1 py-1.5 bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 text-gray-800 dark:text-white rounded-lg font-semibold text-xs transition-all">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

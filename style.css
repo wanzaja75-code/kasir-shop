@@ -1,0 +1,95 @@
+
+/* ===== FONT ===== */
+* {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+body {
+    background: #f0f4f8;
+}
+
+/* ===== CUSTOM TRANSITIONS ===== */
+.transition-smooth {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===== FADE IN ===== */
+.fade-in {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ===== CUSTOM SCROLLBAR ===== */
+::-webkit-scrollbar {
+    width: 3px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+    background: #334155;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+}
+
+/* ===== INPUT NUMBER SPINNER HIDE ===== */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+input[type=number] {
+    -moz-appearance: textfield;
+}
+
+/* ===== DARK MODE ===== */
+.dark body {
+    background: #0b1320;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 480px) {
+    .grid-cols-2 {
+        grid-template-columns: 1fr 1fr;
+        gap: 4px;
+    }
+    .grid-cols-4 {
+        grid-template-columns: 1fr 1fr;
+        gap: 4px;
+    }
+    .grid-cols-5 {
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 2px;
+    }
+    .grid-cols-5 a:last-child {
+        grid-column: span 1;
+    }
+}
+
+/* ===== PRINT ===== */
+@media print {
+    body * { visibility: hidden; }
+    #receiptPrint, #receiptPrint * { visibility: visible; }
+    #receiptPrint {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        padding: 20px;
+        background: white;
+        font-family: 'Courier New', monospace;
+    }
+}
