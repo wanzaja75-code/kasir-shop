@@ -10,7 +10,8 @@ function kasirApp() {
         showBarcodeModal: false,
         waNumber: '',
         waHistory: JSON.parse(localStorage.getItem('waHistory') || '[]'),
-        showNotificationModal: false, // <-- TAMBAHKAN INI
+        showNotificationModal: false,
+        selectedMemberId: '',
         
         // Method
         methods: [
@@ -81,12 +82,13 @@ function kasirApp() {
         
         // ===== MEMBER =====
         members: JSON.parse(localStorage.getItem('members')) || [
-            { id: 1, name: "Budi Santoso", phone: "08123456789", poin: 150, tier: "Silver" },
-            { id: 2, name: "Siti Rahayu", phone: "08198765432", poin: 450, tier: "Gold" },
-            { id: 3, name: "Andi Wijaya", phone: "08155555555", poin: 1200, tier: "Platinum" },
+            { id: 1, name: "Budi Santoso", phone: "08123456789", poin: 150, tier: "Silver", diskon: 5 },
+            { id: 2, name: "Siti Rahayu", phone: "08198765432", poin: 450, tier: "Gold", diskon: 10 },
+            { id: 3, name: "Andi Wijaya", phone: "08155555555", poin: 1200, tier: "Platinum", diskon: 15 },
         ],
         newMember: { name: '', phone: '' },
         searchMember: '',
+        selectedMember: null,
         
         // ===== HUTANG =====
         debts: JSON.parse(localStorage.getItem('debts')) || [],
@@ -102,8 +104,15 @@ function kasirApp() {
         get discountAmount() {
             return (this.subtotal * (parseFloat(this.discount) || 0)) / 100;
         },
+        get memberDiskon() {
+            if (!this.selectedMember) return 0;
+            return this.selectedMember.diskon || 0;
+        },
+        get diskonMemberAmount() {
+            return (this.subtotal * this.memberDiskon) / 100;
+        },
         get grandTotal() {
-            return this.subtotal - this.discountAmount;
+            return this.subtotal - this.discountAmount - this.diskonMemberAmount;
         },
         get change() {
             return (parseFloat(this.payment) || 0) - this.grandTotal;
@@ -221,7 +230,7 @@ function kasirApp() {
             document.documentElement.classList.toggle('dark');
         },
         
-        toggleNotificationModal() { // <-- FUNGSI BARU
+        toggleNotificationModal() {
             this.showNotificationModal = !this.showNotificationModal;
         },
         
@@ -619,6 +628,24 @@ function kasirApp() {
         },
         
         // ===== MEMBER =====
+        selectMember(id) {
+            if (!id) {
+                this.selectedMember = null;
+                return;
+            }
+            const member = this.members.find(m => m.id === parseInt(id));
+            if (member) {
+                this.selectedMember = member;
+                this.setStatus('fa-check-circle', `✅ Member ${member.name} (${member.tier}) - Diskon ${member.diskon}%`, 'success');
+            }
+        },
+        
+        clearSelectedMember() {
+            this.selectedMember = null;
+            this.selectedMemberId = '';
+            this.setStatus('fa-info-circle', 'Member dibatalkan', 'info');
+        },
+        
         addMember() {
             if (!this.newMember.name || !this.newMember.phone) {
                 this.setStatus('fa-exclamation-circle', 'Isi nama & nomor HP!', 'error');
@@ -627,17 +654,19 @@ function kasirApp() {
             
             const poin = 0;
             const tier = this.getTier(poin);
+            const diskon = this.getDiskonByTier(tier);
             
             this.members.push({
                 id: Date.now(),
                 name: this.newMember.name,
                 phone: this.newMember.phone,
                 poin: poin,
-                tier: tier
+                tier: tier,
+                diskon: diskon
             });
             
             this.addNotification(
-                `👤 Member baru: ${this.newMember.name} (${this.newMember.phone})`,
+                `👤 Member baru: ${this.newMember.name} (${this.newMember.phone}) - ${tier} ${diskon}%`,
                 'member',
                 'Member Baru'
             );
@@ -654,9 +683,22 @@ function kasirApp() {
             return 'Bronze';
         },
         
+        getDiskonByTier(tier) {
+            switch(tier) {
+                case 'Platinum': return 15;
+                case 'Gold': return 10;
+                case 'Silver': return 5;
+                default: return 0;
+            }
+        },
+        
         deleteMember(id) {
             if (confirm('Hapus member ini?')) {
                 this.members = this.members.filter(m => m.id !== id);
+                if (this.selectedMember && this.selectedMember.id === id) {
+                    this.selectedMember = null;
+                    this.selectedMemberId = '';
+                }
                 this.saveAll();
                 this.setStatus('fa-check-circle', 'Member dihapus!', 'success');
             }
@@ -678,8 +720,11 @@ function kasirApp() {
             const diskon = poin * 100;
             member.poin -= poin;
             member.tier = this.getTier(member.poin);
+            member.diskon = this.getDiskonByTier(member.tier);
             
-            this.discount = (this.discount || 0) + (diskon / this.subtotal * 100);
+            if (this.selectedMember && this.selectedMember.id === member.id) {
+                this.selectedMember = member;
+            }
             
             this.saveAll();
             this.setStatus('fa-check-circle', `✅ ${member.name} menggunakan ${poin} poin (Diskon Rp ${diskon.toLocaleString()})`, 'success');
@@ -740,6 +785,7 @@ function kasirApp() {
             localStorage.setItem('members', JSON.stringify(this.members));
             localStorage.setItem('debts', JSON.stringify(this.debts));
             localStorage.setItem('notifications', JSON.stringify(this.notifications));
+            localStorage.setItem('selectedMember', JSON.stringify(this.selectedMember));
         },
         
         saveData() {
@@ -754,6 +800,7 @@ function kasirApp() {
             const members = localStorage.getItem('members');
             const debts = localStorage.getItem('debts');
             const notifications = localStorage.getItem('notifications');
+            const selectedMember = localStorage.getItem('selectedMember');
             
             if (cart) this.cart = JSON.parse(cart);
             if (products) this.productDB = JSON.parse(products);
@@ -761,6 +808,7 @@ function kasirApp() {
             if (members) this.members = JSON.parse(members);
             if (debts) this.debts = JSON.parse(debts);
             if (notifications) this.notifications = JSON.parse(notifications);
+            if (selectedMember) this.selectedMember = JSON.parse(selectedMember);
             
             this.setStatus('fa-check-circle', 'Data berhasil dimuat!', 'success');
         },
@@ -845,6 +893,8 @@ function kasirApp() {
                 subtotal: this.subtotal,
                 discount: parseFloat(this.discount) || 0,
                 discountAmount: this.discountAmount,
+                diskonMember: this.memberDiskon,
+                diskonMemberAmount: this.diskonMemberAmount,
                 total: this.grandTotal
             });
             
@@ -893,9 +943,9 @@ function kasirApp() {
             
             csv += '👤 DATA MEMBER\n';
             csv += '-'.repeat(30) + '\n';
-            csv += 'Nama,No HP,Poin,Tier\n';
+            csv += 'Nama,No HP,Poin,Tier,Diskon\n';
             this.members.forEach(m => {
-                csv += `${m.name},${m.phone},${m.poin},${m.tier}\n`;
+                csv += `${m.name},${m.phone},${m.poin},${m.tier},${m.diskon}%\n`;
             });
             csv += '\n';
             
@@ -1044,6 +1094,12 @@ function kasirApp() {
                             <span>Subtotal</span>
                             <span>Rp ${this.subtotal.toLocaleString()}</span>
                         </div>
+                        ${this.selectedMember && this.memberDiskon > 0 ? `
+                        <div style="display: flex; justify-content: space-between; font-size: 12px; color: #94a3b8;">
+                            <span>Diskon Member (${this.memberDiskon}%)</span>
+                            <span>-Rp ${Math.round(this.diskonMemberAmount).toLocaleString()}</span>
+                        </div>
+                        ` : ''}
                         ${this.discount > 0 ? `
                         <div style="display: flex; justify-content: space-between; font-size: 12px; color: #94a3b8;">
                             <span>Diskon (${this.discount}%)</span>
@@ -1099,6 +1155,9 @@ function kasirApp() {
             
             pesan += '\n' + '='.repeat(30) + '\n';
             pesan += `Subtotal  : Rp ${this.subtotal.toLocaleString()}\n`;
+            if (this.selectedMember && this.memberDiskon > 0) {
+                pesan += `Diskon Member (${this.memberDiskon}%) : -Rp ${Math.round(this.diskonMemberAmount).toLocaleString()}\n`;
+            }
             if (this.discount > 0) {
                 pesan += `Diskon    : ${this.discount}%\n`;
                 pesan += `Potongan  : -Rp ${Math.round(this.discountAmount).toLocaleString()}\n`;
@@ -1202,4 +1261,4 @@ function kasirApp() {
             img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgData);
         }
     }
-                }
+                     }
