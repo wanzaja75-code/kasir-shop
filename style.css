@@ -182,3 +182,30 @@ body {
     from { opacity: 1; transform: scale(1) translateY(0); }
     to { opacity: 0; transform: scale(0.95) translateY(20px); }
 }
+
+/* ===== MEMBER SELECT ===== */
+.member-select {
+    transition: all 0.3s ease;
+}
+.member-select:focus {
+    ring: 4px solid rgba(26, 95, 122, 0.15);
+    border-color: #1a5f7a;
+}
+
+/* Badge tier member */
+.tier-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.tier-bronze { background: #fef3c7; color: #92400e; }
+.tier-silver { background: #e5e7eb; color: #374151; }
+.tier-gold { background: #fcd34d; color: #78350f; }
+.tier-platinum { background: #c4b5fd; color: #4c1d95; }
+.dark .tier-bronze { background: #451a03; color: #fcd34d; }
+.dark .tier-silver { background: #1f2937; color: #9ca3af; }
+.dark .tier-gold { background: #451a03; color: #fbbf24; }
+.dark .tier-platinum { background: #1e1b4b; color: #a78bfa; }
