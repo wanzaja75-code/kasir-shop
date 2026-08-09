@@ -80,7 +80,7 @@ function kasirApp() {
         // History
         history: JSON.parse(localStorage.getItem('kasirHistory') || '[]'),
         
-        // ===== MEMBER =====
+        // ===== MEMBER (FIX - tambahkan diskon) =====
         members: JSON.parse(localStorage.getItem('members')) || [
             { id: 1, name: "Budi Santoso", phone: "08123456789", poin: 150, tier: "Silver", diskon: 5 },
             { id: 2, name: "Siti Rahayu", phone: "08198765432", poin: 450, tier: "Gold", diskon: 10 },
@@ -627,7 +627,7 @@ function kasirApp() {
             });
         },
         
-        // ===== MEMBER =====
+        // ===== MEMBER (FIX) =====
         selectMember(id) {
             if (!id) {
                 this.selectedMember = null;
@@ -635,6 +635,10 @@ function kasirApp() {
             }
             const member = this.members.find(m => m.id === parseInt(id));
             if (member) {
+                // Pastikan diskon ada
+                if (member.diskon === undefined) {
+                    member.diskon = this.getDiskonByTier(member.tier);
+                }
                 this.selectedMember = member;
                 this.setStatus('fa-check-circle', `✅ Member ${member.name} (${member.tier}) - Diskon ${member.diskon}%`, 'success');
             }
@@ -684,12 +688,13 @@ function kasirApp() {
         },
         
         getDiskonByTier(tier) {
-            switch(tier) {
-                case 'Platinum': return 15;
-                case 'Gold': return 10;
-                case 'Silver': return 5;
-                default: return 0;
-            }
+            const diskonMap = {
+                'Platinum': 15,
+                'Gold': 10,
+                'Silver': 5,
+                'Bronze': 0
+            };
+            return diskonMap[tier] || 0;
         },
         
         deleteMember(id) {
@@ -805,10 +810,25 @@ function kasirApp() {
             if (cart) this.cart = JSON.parse(cart);
             if (products) this.productDB = JSON.parse(products);
             if (history) this.history = JSON.parse(history);
-            if (members) this.members = JSON.parse(members);
+            if (members) {
+                this.members = JSON.parse(members);
+                // FIX: Tambahkan diskon ke member lama yang tidak punya
+                this.members = this.members.map(m => {
+                    if (m.diskon === undefined) {
+                        m.diskon = this.getDiskonByTier(m.tier);
+                    }
+                    return m;
+                });
+            }
             if (debts) this.debts = JSON.parse(debts);
             if (notifications) this.notifications = JSON.parse(notifications);
-            if (selectedMember) this.selectedMember = JSON.parse(selectedMember);
+            if (selectedMember) {
+                this.selectedMember = JSON.parse(selectedMember);
+                // FIX: Pastikan selected member punya diskon
+                if (this.selectedMember && this.selectedMember.diskon === undefined) {
+                    this.selectedMember.diskon = this.getDiskonByTier(this.selectedMember.tier);
+                }
+            }
             
             this.setStatus('fa-check-circle', 'Data berhasil dimuat!', 'success');
         },
@@ -847,7 +867,16 @@ function kasirApp() {
                     const data = JSON.parse(e.target.result);
                     if (data.products) this.productDB = data.products;
                     if (data.history) this.history = data.history;
-                    if (data.members) this.members = data.members;
+                    if (data.members) {
+                        this.members = data.members;
+                        // FIX: Tambahkan diskon ke member lama
+                        this.members = this.members.map(m => {
+                            if (m.diskon === undefined) {
+                                m.diskon = this.getDiskonByTier(m.tier);
+                            }
+                            return m;
+                        });
+                    }
                     if (data.debts) this.debts = data.debts;
                     if (data.notifications) this.notifications = data.notifications;
                     this.saveAll();
@@ -1261,4 +1290,4 @@ function kasirApp() {
             img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgData);
         }
     }
-                     }
+        }
