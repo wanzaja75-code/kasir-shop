@@ -4,23 +4,13 @@
 
 function kasirApp() {
     return {
-        // ===== NAVIGASI =====
-        currentPage: 'beranda',
-        navigations: [
-            { id: 'beranda', icon: 'fa-home', label: 'Beranda' },
-            { id: 'produk', icon: 'fa-boxes', label: 'Produk' },
-            { id: 'laporan', icon: 'fa-chart-bar', label: 'Laporan' },
-            { id: 'member', icon: 'fa-user-tie', label: 'Member' },
-            { id: 'hutang', icon: 'fa-hand-holding-usd', label: 'Hutang' },
-            { id: 'pengaturan', icon: 'fa-sliders-h', label: 'Settings' }
-        ],
-        
         // ===== STATE =====
         darkMode: localStorage.getItem('theme') === 'dark',
         datetime: '',
         showBarcodeModal: false,
         waNumber: '',
         waHistory: JSON.parse(localStorage.getItem('waHistory') || '[]'),
+        showNotificationModal: false, // <-- TAMBAHKAN INI
         
         // Method
         methods: [
@@ -202,12 +192,10 @@ function kasirApp() {
                 document.documentElement.classList.add('dark');
             }
             
-            // Chart setelah DOM siap
             setTimeout(() => {
                 this.initChart();
             }, 500);
             
-            // Cek notifikasi setiap 2 menit
             this.checkNotifications();
             setInterval(() => {
                 this.checkNotifications();
@@ -231,6 +219,10 @@ function kasirApp() {
             this.darkMode = !this.darkMode;
             localStorage.setItem('theme', this.darkMode ? 'dark' : 'light');
             document.documentElement.classList.toggle('dark');
+        },
+        
+        toggleNotificationModal() { // <-- FUNGSI BARU
+            this.showNotificationModal = !this.showNotificationModal;
         },
         
         setStatus(icon, message, type = 'info') {
@@ -293,7 +285,6 @@ function kasirApp() {
                 product.stock -= 1;
             }
             
-            // Notifikasi stok menipis
             if (product.stock !== undefined && product.stock <= 5) {
                 this.addNotification(
                     `⚠️ Stok ${product.name} tersisa ${product.stock} pcs! Segera restock.`,
@@ -588,7 +579,6 @@ function kasirApp() {
         },
         
         checkNotifications() {
-            // Cek stok habis
             const lowStock = this.lowStockAlerts;
             lowStock.forEach(item => {
                 const existing = this.notifications.find(n => 
@@ -605,7 +595,6 @@ function kasirApp() {
                 }
             });
             
-            // Cek hutang jatuh tempo
             const today = new Date();
             this.debts.forEach(debt => {
                 if (debt.status !== 'Belum Lunas') return;
@@ -879,7 +868,6 @@ function kasirApp() {
             csv += '='.repeat(50) + '\n';
             csv += `Tanggal Export: ${new Date().toLocaleString('id-ID')}\n\n`;
             
-            // Ringkasan
             csv += '📋 RINGKASAN\n';
             csv += '-'.repeat(30) + '\n';
             csv += `Total Transaksi,${this.history.length}\n`;
@@ -887,7 +875,6 @@ function kasirApp() {
             csv += `Rata-rata,Rp ${Math.round(this.averageSales).toLocaleString()}\n`;
             csv += `Total Produk Terjual,${this.totalItemsSold} pcs\n\n`;
             
-            // Produk Terlaris
             csv += '🏆 PRODUK TERLARIS\n';
             csv += '-'.repeat(30) + '\n';
             csv += 'Nama Produk,Jumlah Terjual,Total Pendapatan\n';
@@ -896,7 +883,6 @@ function kasirApp() {
             });
             csv += '\n';
             
-            // Hutang
             csv += '💰 DATA HUTANG\n';
             csv += '-'.repeat(30) + '\n';
             csv += 'Pelanggan,Jumlah,Tanggal Jatuh Tempo,Status,Catatan\n';
@@ -905,7 +891,6 @@ function kasirApp() {
             });
             csv += '\n';
             
-            // Member
             csv += '👤 DATA MEMBER\n';
             csv += '-'.repeat(30) + '\n';
             csv += 'Nama,No HP,Poin,Tier\n';
@@ -914,7 +899,6 @@ function kasirApp() {
             });
             csv += '\n';
             
-            // Riwayat Transaksi
             if (this.history.length > 0) {
                 csv += '📄 RIWAYAT TRANSAKSI\n';
                 csv += '-'.repeat(30) + '\n';
@@ -1218,4 +1202,4 @@ function kasirApp() {
             img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgData);
         }
     }
-        }
+                }
