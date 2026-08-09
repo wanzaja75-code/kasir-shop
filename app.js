@@ -101,6 +101,9 @@ function kasirApp() {
         // ===== HUTANG =====
         debts: JSON.parse(localStorage.getItem('debts')) || [],
         newDebt: { customer: '', amount: '', dueDate: '', note: '' },
+
+        // ===== NOTIFIKASI =====
+        notifications: JSON.parse(localStorage.getItem('notifications')) || [],
         
         // ===== COMPUTED =====
         get subtotal() {
