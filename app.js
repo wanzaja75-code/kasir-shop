@@ -65,7 +65,7 @@ function kasirApp() {
         // Discount & Payment
         discount: 0,
         payment: 0,
-        paymentMethod: 'tunai', // tunai, qris, debit, ewallet
+        paymentMethod: 'tunai',
         
         // New Product
         newProduct: { barcode: '', name: '', category: 'Makanan', unit: 'Pcs', price: '', stock: 0, diskon: 0 },
@@ -116,7 +116,6 @@ function kasirApp() {
         get diskonMemberAmount() {
             return (this.subtotal * this.memberDiskon) / 100;
         },
-        // Diskon produk (per item)
         get diskonProdukAmount() {
             return this.cart.reduce((sum, item) => {
                 const product = this.productDB[item.barcode];
@@ -198,8 +197,6 @@ function kasirApp() {
         get unreadCount() {
             return this.notifications.filter(n => !n.read).length;
         },
-        
-        // Laporan Bulanan
         get filteredHistory() {
             return this.history.filter(t => {
                 const date = new Date(t.date);
@@ -729,7 +726,6 @@ function kasirApp() {
             return diskonMap[tier] || 0;
         },
         
-        // ===== POIN MEMBER =====
         getPoinRate(tier) {
             const rateMap = {
                 'Platinum': 3,
@@ -1012,82 +1008,7 @@ function kasirApp() {
             this.discount = 0;
         },
         
-        // ===== NOTA PDF =====
-        downloadPDF() {
-            if (this.cart.length === 0) {
-                alert('Belum ada barang!');
-                return;
-            }
-            
-            this.saveTransaction();
-            
-            const now = new Date();
-            const dateStr = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-            const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-            
-            // Buat HTML untuk PDF
-            const htmlContent = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <title>Struk Belanja</title>
-                <style>
-                    body { font-family: 'Courier New', monospace; padding: 40px; max-width: 400px; margin: 0 auto; }
-                    .header { text-align: center; border-bottom: 2px dashed #333; padding-bottom: 10px; margin-bottom: 10px; }
-                    .header h1 { font-size: 20px; margin: 0; color: #0f2a44; }
-                    .header p { font-size: 11px; color: #666; margin: 2px 0; }
-                    .items { padding: 10px 0; }
-                    .item { display: flex; justify-content: space-between; padding: 3px 0; font-size: 13px; }
-                    .total { border-top: 2px dashed #333; padding-top: 10px; margin-top: 10px; }
-                    .total-row { display: flex; justify-content: space-between; font-size: 13px; }
-                    .grand-total { font-size: 20px; font-weight: bold; color: #0f2a44; border-top: 2px solid #333; padding-top: 6px; margin-top: 6px; }
-                    .footer { text-align: center; font-size: 11px; color: #999; margin-top: 12px; padding-top: 12px; border-top: 2px dashed #333; }
-                    .method { font-size: 12px; color: #555; margin-top: 4px; }
-                </style>
-            </head>
-            <body>
-                <div class="header">
-                    <h1>🧾 STRUK BELANJA</h1>
-                    <p>${dateStr} ${timeStr}</p>
-                </div>
-                <div class="items">
-                    ${this.cart.map(item => `
-                        <div class="item">
-                            <span>${item.name} x${item.qty}</span>
-                            <span>Rp ${(item.price * item.qty).toLocaleString()}</span>
-                        </div>
-                    `).join('')}
-                </div>
-                <div class="total">
-                    <div class="total-row"><span>Subtotal</span><span>Rp ${this.subtotal.toLocaleString()}</span></div>
-                    ${this.diskonProdukAmount > 0 ? `<div class="total-row" style="color:#666;"><span>Diskon Produk</span><span>-Rp ${Math.round(this.diskonProdukAmount).toLocaleString()}</span></div>` : ''}
-                    ${this.memberDiskon > 0 ? `<div class="total-row" style="color:#666;"><span>Diskon Member (${this.memberDiskon}%)</span><span>-Rp ${Math.round(this.diskonMemberAmount).toLocaleString()}</span></div>` : ''}
-                    ${this.discount > 0 ? `<div class="total-row" style="color:#666;"><span>Diskon (${this.discount}%)</span><span>-Rp ${Math.round(this.discountAmount).toLocaleString()}</span></div>` : ''}
-                    <div class="grand-total">
-                        <span>TOTAL</span>
-                        <span>Rp ${Math.round(this.grandTotal).toLocaleString()}</span>
-                    </div>
-                    ${this.payment > 0 ? `
-                        <div class="total-row" style="margin-top:4px;"><span>Bayar</span><span>Rp ${Number(this.payment).toLocaleString()}</span></div>
-                        <div class="total-row" style="font-weight:bold;color:#22a65a;"><span>Kembali</span><span>Rp ${this.change >= 0 ? this.change.toLocaleString() : '0'}</span></div>
-                    ` : ''}
-                    <div class="method">💳 Metode: ${this.getPaymentMethodLabel(this.paymentMethod)}</div>
-                </div>
-                <div class="footer">
-                    Terima kasih 🙏<br>
-                    Barang yang sudah dibeli tidak dapat ditukar
-                </div>
-            </body>
-            </html>`;
-            
-            // Buka window untuk print/save PDF
-            const win = window.open('', '_blank', 'width=500,height=700');
-            win.document.write(htmlContent);
-            win.document.close();
-            win.print();
-        },
-        
+        // ===== GET PAYMENT METHOD LABEL =====
         getPaymentMethodLabel(method) {
             const labels = {
                 'tunai': '💵 Tunai',
@@ -1096,6 +1017,623 @@ function kasirApp() {
                 'ewallet': '📲 E-Wallet'
             };
             return labels[method] || method;
+        },
+        
+        // ===== PRINT STRUK PREMIUM =====
+        printReceipt() {
+            if (this.cart.length === 0) {
+                alert('Belum ada barang di keranjang!');
+                return;
+            }
+            
+            this.saveTransaction();
+            
+            const items = this.cart;
+            const subtotal = this.subtotal;
+            const discount = this.discount;
+            const discountAmount = this.discountAmount;
+            const diskonProdukAmount = this.diskonProdukAmount;
+            const memberDiskon = this.memberDiskon;
+            const diskonMemberAmount = this.diskonMemberAmount;
+            const grandTotal = this.grandTotal;
+            const payment = this.payment;
+            const change = this.change;
+            const paymentMethod = this.paymentMethod;
+            
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            const transactionId = 'TRX-' + Date.now().toString().slice(-8);
+            
+            const methodLabels = {
+                'tunai': '💵 Tunai',
+                'qris': '📱 QRIS',
+                'debit': '💳 Debit/Kredit',
+                'ewallet': '📲 E-Wallet'
+            };
+            
+            let html = `
+                <div id="receiptPrint" style="
+                    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+                    max-width: 380px;
+                    margin: 0 auto;
+                    background: #ffffff;
+                    border-radius: 20px;
+                    padding: 28px 24px;
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+                    position: relative;
+                    overflow: hidden;
+                ">
+                    <!-- Decorative Top Border -->
+                    <div style="
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        height: 6px;
+                        background: linear-gradient(90deg, #1a5f7a, #4a9ab8, #1a5f7a);
+                        background-size: 200% 100%;
+                        animation: shimmer 3s ease-in-out infinite;
+                    "></div>
+                    
+                    <style>
+                        @keyframes shimmer {
+                            0%, 100% { background-position: 0% 50%; }
+                            50% { background-position: 100% 50%; }
+                        }
+                        @media print {
+                            #receiptPrint {
+                                box-shadow: none !important;
+                                border-radius: 0 !important;
+                                padding: 20px !important;
+                            }
+                            #receiptPrint .no-print { display: none !important; }
+                        }
+                    </style>
+                    
+                    <!-- Header -->
+                    <div style="text-align: center; border-bottom: 2px dashed #e8edf2; padding-bottom: 16px; margin-bottom: 16px;">
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 4px;">
+                            <div style="
+                                width: 44px;
+                                height: 44px;
+                                background: linear-gradient(145deg, #0f2a44, #1a5f7a);
+                                border-radius: 14px;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                color: white;
+                                font-size: 20px;
+                                font-weight: 800;
+                                letter-spacing: -0.5px;
+                                box-shadow: 0 4px 12px rgba(26, 95, 122, 0.3);
+                            ">
+                                <span style="font-size: 18px;">🛒</span>
+                            </div>
+                            <div style="text-align: left;">
+                                <h1 style="
+                                    font-size: 22px;
+                                    font-weight: 800;
+                                    color: #0f2a44;
+                                    margin: 0;
+                                    line-height: 1.2;
+                                    letter-spacing: -0.5px;
+                                ">Struk Belanja</h1>
+                                <p style="
+                                    font-size: 10px;
+                                    color: #94a3b8;
+                                    margin: 0;
+                                    letter-spacing: 0.5px;
+                                    text-transform: uppercase;
+                                ">${transactionId}</p>
+                            </div>
+                        </div>
+                        <div style="
+                            display: flex;
+                            justify-content: center;
+                            gap: 16px;
+                            font-size: 11px;
+                            color: #64748b;
+                            margin-top: 6px;
+                        ">
+                            <span>📅 ${dateStr}</span>
+                            <span>⏱️ ${timeStr}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Kasir Info -->
+                    <div style="
+                        background: #f8fafc;
+                        border-radius: 12px;
+                        padding: 10px 14px;
+                        margin-bottom: 14px;
+                        display: flex;
+                        justify-content: space-between;
+                        font-size: 11px;
+                        color: #475569;
+                        border: 1px solid #eef2f6;
+                    ">
+                        <span>👤 Kasir: <strong style="color: #0f2a44;">Admin</strong></span>
+                        <span>📋 #${transactionId.slice(-6)}</span>
+                    </div>
+                    
+                    <!-- Items -->
+                    <div style="margin-bottom: 14px;">
+                        <div style="
+                            display: flex;
+                            justify-content: space-between;
+                            font-size: 10px;
+                            font-weight: 700;
+                            color: #94a3b8;
+                            text-transform: uppercase;
+                            letter-spacing: 0.5px;
+                            padding: 0 2px 6px 2px;
+                            border-bottom: 1px solid #eef2f6;
+                        ">
+                            <span>Produk</span>
+                            <span>Qty</span>
+                            <span style="text-align: right;">Total</span>
+                        </div>
+            `;
+            
+            items.forEach((item, index) => {
+                const totalItem = item.price * item.qty;
+                const isLast = index === items.length - 1;
+                html += `
+                    <div style="
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        padding: 8px 2px;
+                        ${!isLast ? 'border-bottom: 1px solid #f1f5f9;' : ''}
+                        transition: background 0.2s;
+                    ">
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-size: 13px; font-weight: 500; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                ${item.name}
+                            </div>
+                            ${item.diskon > 0 ? `
+                                <span style="
+                                    font-size: 9px;
+                                    background: #fef2f2;
+                                    color: #dc2626;
+                                    padding: 1px 8px;
+                                    border-radius: 10px;
+                                    font-weight: 600;
+                                ">Diskon ${item.diskon}%</span>
+                            ` : ''}
+                        </div>
+                        <div style="
+                            font-size: 13px;
+                            font-weight: 600;
+                            color: #0f2a44;
+                            margin: 0 12px;
+                            text-align: center;
+                            min-width: 28px;
+                        ">${item.qty}</div>
+                        <div style="
+                            font-size: 13px;
+                            font-weight: 700;
+                            color: #1a5f7a;
+                            text-align: right;
+                            min-width: 80px;
+                        ">Rp ${totalItem.toLocaleString()}</div>
+                    </div>
+                `;
+            });
+            
+            html += `
+                    </div>
+                    
+                    <!-- Divider -->
+                    <div style="
+                        border-top: 2px dashed #e8edf2;
+                        padding-top: 14px;
+                        margin-bottom: 12px;
+                    ">
+                        <!-- Subtotal -->
+                        <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0;">
+                            <span style="color: #64748b;">Subtotal</span>
+                            <span style="font-weight: 600; color: #1e293b;">Rp ${subtotal.toLocaleString()}</span>
+                        </div>
+            `;
+            
+            if (diskonProdukAmount > 0) {
+                html += `
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; padding: 2px 0; color: #94a3b8;">
+                        <span>Diskon Produk</span>
+                        <span style="color: #dc2626;">-Rp ${Math.round(diskonProdukAmount).toLocaleString()}</span>
+                    </div>
+                `;
+            }
+            
+            if (memberDiskon > 0) {
+                html += `
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; padding: 2px 0; color: #94a3b8;">
+                        <span>Diskon Member (${memberDiskon}%)</span>
+                        <span style="color: #dc2626;">-Rp ${Math.round(diskonMemberAmount).toLocaleString()}</span>
+                    </div>
+                `;
+            }
+            
+            if (discount > 0) {
+                html += `
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; padding: 2px 0; color: #94a3b8;">
+                        <span>Diskon (${discount}%)</span>
+                        <span style="color: #dc2626;">-Rp ${Math.round(discountAmount).toLocaleString()}</span>
+                    </div>
+                `;
+            }
+            
+            html += `
+                        <!-- Grand Total -->
+                        <div style="
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            margin-top: 10px;
+                            padding-top: 10px;
+                            border-top: 2px solid #0f2a44;
+                            border-bottom: 2px solid #0f2a44;
+                            padding-bottom: 10px;
+                        ">
+                            <span style="
+                                font-size: 16px;
+                                font-weight: 700;
+                                color: #0f2a44;
+                            ">TOTAL</span>
+                            <span style="
+                                font-size: 22px;
+                                font-weight: 800;
+                                color: #1a5f7a;
+                                letter-spacing: -0.5px;
+                            ">Rp ${Math.round(grandTotal).toLocaleString()}</span>
+                        </div>
+            `;
+            
+            if (payment > 0) {
+                html += `
+                    <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0 2px 0; margin-top: 6px;">
+                        <span style="color: #64748b;">Uang Bayar</span>
+                        <span style="font-weight: 600; color: #1e293b;">Rp ${Number(payment).toLocaleString()}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; padding: 2px 0;">
+                        <span style="color: #059669;">Kembalian</span>
+                        <span style="color: #059669;">Rp ${change >= 0 ? change.toLocaleString() : '0'}</span>
+                    </div>
+                `;
+            }
+            
+            html += `
+                        <div style="
+                            display: flex;
+                            justify-content: space-between;
+                            font-size: 11px;
+                            color: #94a3b8;
+                            margin-top: 6px;
+                            padding-top: 6px;
+                            border-top: 1px solid #eef2f6;
+                        ">
+                            <span>Metode Pembayaran</span>
+                            <span style="font-weight: 500; color: #475569;">${methodLabels[paymentMethod] || 'Tunai'}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Footer -->
+                    <div style="
+                        text-align: center;
+                        margin-top: 16px;
+                        padding-top: 14px;
+                        border-top: 2px dashed #e8edf2;
+                    ">
+                        <p style="
+                            font-size: 12px;
+                            font-weight: 500;
+                            color: #0f2a44;
+                            margin: 0 0 2px 0;
+                        ">Terima kasih telah berbelanja</p>
+                        <p style="
+                            font-size: 10px;
+                            color: #94a3b8;
+                            margin: 0;
+                        ">Barang yang sudah dibeli tidak dapat ditukar</p>
+                        <div style="
+                            margin-top: 8px;
+                            display: flex;
+                            justify-content: center;
+                            gap: 12px;
+                            font-size: 10px;
+                            color: #cbd5e1;
+                        ">
+                            <span>✦</span>
+                            <span>${new Date().getFullYear()} KasirScan</span>
+                            <span>✦</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            const win = window.open('', '_blank', 'width=420,height=700');
+            if (!win) {
+                alert('Mohon izinkan popup untuk mencetak struk!');
+                return;
+            }
+            
+            win.document.write(`
+                <html>
+                    <head>
+                        <title>Struk Belanja</title>
+                        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+                        <style>
+                            * { margin: 0; padding: 0; box-sizing: border-box; }
+                            body { 
+                                margin: 0; 
+                                background: #f1f5f9; 
+                                display: flex; 
+                                align-items: center; 
+                                justify-content: center; 
+                                min-height: 100vh; 
+                                padding: 20px;
+                                font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+                            }
+                            @media print {
+                                body { background: white; padding: 0; }
+                                #receiptPrint { 
+                                    box-shadow: none !important; 
+                                    border-radius: 0 !important;
+                                    padding: 16px !important;
+                                    max-width: 100% !important;
+                                }
+                            }
+                            @media (max-width: 480px) {
+                                body { padding: 8px; }
+                                #receiptPrint { padding: 16px !important; }
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        ${html}
+                        <div style="
+                            text-align: center; 
+                            margin-top: 12px; 
+                            display: flex; 
+                            gap: 8px; 
+                            justify-content: center;
+                        " class="no-print">
+                            <button onclick="window.print()" style="
+                                padding: 10px 32px;
+                                background: linear-gradient(145deg, #1a5f7a, #0f2a44);
+                                color: white;
+                                border: none;
+                                border-radius: 12px;
+                                font-size: 14px;
+                                font-weight: 600;
+                                cursor: pointer;
+                                transition: all 0.3s;
+                                box-shadow: 0 4px 16px rgba(26, 95, 122, 0.3);
+                            " onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                                🖨️ Cetak Struk
+                            </button>
+                            <button onclick="window.close()" style="
+                                padding: 10px 24px;
+                                background: #eef2f6;
+                                color: #475569;
+                                border: none;
+                                border-radius: 12px;
+                                font-size: 14px;
+                                font-weight: 600;
+                                cursor: pointer;
+                                transition: all 0.3s;
+                            " onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#eef2f6'">
+                                Tutup
+                            </button>
+                        </div>
+                    </body>
+                </html>
+            `);
+            win.document.close();
+            setTimeout(() => win.print(), 800);
+        },
+        
+        // ===== NOTA PDF PREMIUM =====
+        downloadPDF() {
+            if (this.cart.length === 0) {
+                alert('Belum ada barang!');
+                return;
+            }
+            
+            this.saveTransaction();
+            
+            const items = this.cart;
+            const subtotal = this.subtotal;
+            const discount = this.discount;
+            const discountAmount = this.discountAmount;
+            const diskonProdukAmount = this.diskonProdukAmount;
+            const memberDiskon = this.memberDiskon;
+            const diskonMemberAmount = this.diskonMemberAmount;
+            const grandTotal = this.grandTotal;
+            const payment = this.payment;
+            const change = this.change;
+            const paymentMethod = this.paymentMethod;
+            
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            const transactionId = 'TRX-' + Date.now().toString().slice(-8);
+            
+            const methodLabels = {
+                'tunai': '💵 Tunai',
+                'qris': '📱 QRIS',
+                'debit': '💳 Debit/Kredit',
+                'ewallet': '📲 E-Wallet'
+            };
+            
+            let html = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Struk Belanja</title>
+                    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+                    <style>
+                        * { margin: 0; padding: 0; box-sizing: border-box; }
+                        body { 
+                            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; 
+                            padding: 40px; 
+                            max-width: 400px; 
+                            margin: 0 auto; 
+                            background: white;
+                        }
+                        .header { text-align: center; border-bottom: 2px dashed #e8edf2; padding-bottom: 16px; margin-bottom: 16px; }
+                        .header .logo { 
+                            width: 48px; height: 48px; 
+                            background: linear-gradient(145deg, #0f2a44, #1a5f7a); 
+                            border-radius: 14px; 
+                            display: flex; align-items: center; justify-content: center; 
+                            margin: 0 auto 8px;
+                            color: white; font-size: 22px;
+                        }
+                        .header h1 { font-size: 20px; font-weight: 800; color: #0f2a44; letter-spacing: -0.5px; }
+                        .header p { font-size: 11px; color: #94a3b8; margin: 2px 0; }
+                        .header .meta { display: flex; justify-content: center; gap: 16px; font-size: 10px; color: #94a3b8; margin-top: 4px; }
+                        .header .trx-id { font-size: 10px; color: #94a3b8; letter-spacing: 0.5px; text-transform: uppercase; }
+                        .items { padding: 0 0 10px 0; }
+                        .item-header { 
+                            display: flex; justify-content: space-between; 
+                            font-size: 9px; font-weight: 700; color: #94a3b8; 
+                            text-transform: uppercase; letter-spacing: 0.5px;
+                            padding: 0 0 6px 0; border-bottom: 1px solid #eef2f6;
+                        }
+                        .item { 
+                            display: flex; justify-content: space-between; align-items: center;
+                            padding: 7px 0; 
+                            border-bottom: 1px solid #f1f5f9;
+                        }
+                        .item-name { font-size: 13px; font-weight: 500; color: #1e293b; flex: 1; }
+                        .item-qty { font-size: 13px; font-weight: 600; color: #0f2a44; margin: 0 12px; text-align: center; min-width: 28px; }
+                        .item-total { font-size: 13px; font-weight: 700; color: #1a5f7a; text-align: right; min-width: 80px; }
+                        .item-diskon { font-size: 9px; background: #fef2f2; color: #dc2626; padding: 1px 8px; border-radius: 10px; font-weight: 600; }
+                        .total { border-top: 2px dashed #e8edf2; padding-top: 14px; margin-top: 6px; }
+                        .total-row { display: flex; justify-content: space-between; font-size: 13px; padding: 2px 0; }
+                        .grand-total { 
+                            display: flex; justify-content: space-between; align-items: center;
+                            margin-top: 10px; padding-top: 10px;
+                            border-top: 2px solid #0f2a44; border-bottom: 2px solid #0f2a44;
+                            padding-bottom: 10px;
+                        }
+                        .grand-total-label { font-size: 16px; font-weight: 700; color: #0f2a44; }
+                        .grand-total-value { font-size: 22px; font-weight: 800; color: #1a5f7a; letter-spacing: -0.5px; }
+                        .payment-row { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0 2px 0; margin-top: 6px; }
+                        .payment-row .label { color: #64748b; }
+                        .payment-row .value { font-weight: 600; color: #1e293b; }
+                        .change-row { display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; padding: 2px 0; }
+                        .change-row .label { color: #059669; }
+                        .change-row .value { color: #059669; }
+                        .method { 
+                            display: flex; justify-content: space-between; 
+                            font-size: 11px; color: #94a3b8; 
+                            margin-top: 6px; padding-top: 6px; border-top: 1px solid #eef2f6;
+                        }
+                        .method .value { font-weight: 500; color: #475569; }
+                        .footer { 
+                            text-align: center; 
+                            margin-top: 16px; padding-top: 14px; border-top: 2px dashed #e8edf2; 
+                        }
+                        .footer p { font-size: 11px; color: #94a3b8; margin: 2px 0; }
+                        .footer .thank { font-size: 13px; font-weight: 600; color: #0f2a44; }
+                        .footer .divider { display: flex; justify-content: center; gap: 12px; font-size: 10px; color: #cbd5e1; margin-top: 6px; }
+                        @media print { body { padding: 16px; } }
+                        @media (max-width: 480px) { body { padding: 16px; } }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <div class="logo">🛒</div>
+                        <h1>Struk Belanja</h1>
+                        <p class="trx-id">${transactionId}</p>
+                        <p>${dateStr} | ${timeStr}</p>
+                    </div>
+                    
+                    <div class="items">
+                        <div class="item-header">
+                            <span>Produk</span>
+                            <span>Qty</span>
+                            <span style="text-align: right;">Total</span>
+                        </div>
+            `;
+            
+            items.forEach(item => {
+                const totalItem = item.price * item.qty;
+                html += `
+                    <div class="item">
+                        <div class="item-name">${item.name}${item.diskon > 0 ? ' <span class="item-diskon">-'+item.diskon+'%</span>' : ''}</div>
+                        <div class="item-qty">${item.qty}</div>
+                        <div class="item-total">Rp ${totalItem.toLocaleString()}</div>
+                    </div>
+                `;
+            });
+            
+            html += `
+                    </div>
+                    
+                    <div class="total">
+                        <div class="total-row"><span style="color:#64748b;">Subtotal</span><span style="font-weight:600;color:#1e293b;">Rp ${subtotal.toLocaleString()}</span></div>
+            `;
+            
+            if (diskonProdukAmount > 0) {
+                html += `<div class="total-row" style="color:#94a3b8;"><span>Diskon Produk</span><span style="color:#dc2626;">-Rp ${Math.round(diskonProdukAmount).toLocaleString()}</span></div>`;
+            }
+            
+            if (memberDiskon > 0) {
+                html += `<div class="total-row" style="color:#94a3b8;"><span>Diskon Member (${memberDiskon}%)</span><span style="color:#dc2626;">-Rp ${Math.round(diskonMemberAmount).toLocaleString()}</span></div>`;
+            }
+            
+            if (discount > 0) {
+                html += `<div class="total-row" style="color:#94a3b8;"><span>Diskon (${discount}%)</span><span style="color:#dc2626;">-Rp ${Math.round(discountAmount).toLocaleString()}</span></div>`;
+            }
+            
+            html += `
+                        <div class="grand-total">
+                            <span class="grand-total-label">TOTAL</span>
+                            <span class="grand-total-value">Rp ${Math.round(grandTotal).toLocaleString()}</span>
+                        </div>
+            `;
+            
+            if (payment > 0) {
+                html += `
+                    <div class="payment-row"><span class="label">Uang Bayar</span><span class="value">Rp ${Number(payment).toLocaleString()}</span></div>
+                    <div class="change-row"><span class="label">Kembalian</span><span class="value">Rp ${change >= 0 ? change.toLocaleString() : '0'}</span></div>
+                `;
+            }
+            
+            html += `
+                        <div class="method"><span>Metode Pembayaran</span><span class="value">${methodLabels[paymentMethod] || 'Tunai'}</span></div>
+                    </div>
+                    
+                    <div class="footer">
+                        <p class="thank">Terima kasih telah berbelanja</p>
+                        <p>Barang yang sudah dibeli tidak dapat ditukar</p>
+                        <div class="divider">
+                            <span>✦</span>
+                            <span>${new Date().getFullYear()} KasirScan</span>
+                            <span>✦</span>
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `;
+            
+            const win = window.open('', '_blank', 'width=500,height=700');
+            if (!win) {
+                alert('Mohon izinkan popup untuk download PDF!');
+                return;
+            }
+            win.document.write(html);
+            win.document.close();
+            
+            setTimeout(() => {
+                win.print();
+            }, 600);
         },
         
         // ===== EXPORT EXCEL LENGKAP =====
@@ -1247,93 +1785,6 @@ function kasirApp() {
             });
         },
         
-        // ===== PRINT =====
-        printReceipt() {
-            if (this.cart.length === 0) {
-                alert('Belum ada barang!');
-                return;
-            }
-            
-            this.saveTransaction();
-            
-            const now = new Date();
-            const dateStr = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-            const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-            
-            let html = `
-                <div id="receiptPrint" style="font-family: 'Inter', monospace; padding: 24px; max-width: 340px; margin: 0 auto; background: white; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.1);">
-                    <div style="text-align: center; border-bottom: 2px dashed #e2e8f0; padding-bottom: 12px;">
-                        <h2 style="font-size: 20px; font-weight: 700; color: #0f2a44;">🧾 STRUK BELANJA</h2>
-                        <p style="font-size: 11px; color: #94a3b8; margin-top: 2px;">${dateStr} ${timeStr}</p>
-                    </div>
-                    <div style="padding: 12px 0;">
-            `;
-            
-            this.cart.forEach(item => {
-                html += `
-                    <div style="display: flex; justify-content: space-between; padding: 3px 0; font-size: 13px;">
-                        <span>${item.name} x${item.qty}</span>
-                        <span style="font-weight: 600;">Rp ${(item.price * item.qty).toLocaleString()}</span>
-                    </div>
-                `;
-            });
-            
-            html += `
-                    </div>
-                    <div style="border-top: 2px dashed #e2e8f0; padding-top: 10px;">
-                        <div style="display: flex; justify-content: space-between; font-size: 13px;">
-                            <span>Subtotal</span>
-                            <span>Rp ${this.subtotal.toLocaleString()}</span>
-                        </div>
-                        ${this.diskonProdukAmount > 0 ? `
-                        <div style="display: flex; justify-content: space-between; font-size: 12px; color: #94a3b8;">
-                            <span>Diskon Produk</span>
-                            <span>-Rp ${Math.round(this.diskonProdukAmount).toLocaleString()}</span>
-                        </div>
-                        ` : ''}
-                        ${this.selectedMember && this.memberDiskon > 0 ? `
-                        <div style="display: flex; justify-content: space-between; font-size: 12px; color: #94a3b8;">
-                            <span>Diskon Member (${this.memberDiskon}%)</span>
-                            <span>-Rp ${Math.round(this.diskonMemberAmount).toLocaleString()}</span>
-                        </div>
-                        ` : ''}
-                        ${this.discount > 0 ? `
-                        <div style="display: flex; justify-content: space-between; font-size: 12px; color: #94a3b8;">
-                            <span>Diskon (${this.discount}%)</span>
-                            <span>-Rp ${Math.round(this.discountAmount).toLocaleString()}</span>
-                        </div>
-                        ` : ''}
-                        <div style="display: flex; justify-content: space-between; font-size: 20px; font-weight: 700; color: #0f2a44; margin-top: 6px; padding-top: 6px; border-top: 2px solid #e2e8f0;">
-                            <span>TOTAL</span>
-                            <span>Rp ${Math.round(this.grandTotal).toLocaleString()}</span>
-                        </div>
-                        ${this.payment > 0 ? `
-                        <div style="display: flex; justify-content: space-between; font-size: 13px; margin-top: 4px;">
-                            <span>Uang Bayar</span>
-                            <span>Rp ${Number(this.payment).toLocaleString()}</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; color: #22a65a;">
-                            <span>Kembalian</span>
-                            <span>Rp ${this.change >= 0 ? this.change.toLocaleString() : '0'}</span>
-                        </div>
-                        ` : ''}
-                        <div style="display: flex; justify-content: space-between; font-size: 12px; color: #666; margin-top: 4px;">
-                            <span>Metode Pembayaran</span>
-                            <span>${this.getPaymentMethodLabel(this.paymentMethod)}</span>
-                        </div>
-                    </div>
-                    <div style="text-align: center; font-size: 11px; color: #94a3b8; margin-top: 12px; padding-top: 12px; border-top: 2px dashed #e2e8f0;">
-                        Terima kasih 🙏
-                    </div>
-                </div>
-            `;
-            
-            const win = window.open('', '_blank', 'width=400,height=600');
-            win.document.write(`<html><head><title>Struk</title></head><body style="margin:0; background:#f1f5f9; display:flex; align-items:center; justify-content:center; min-height:100vh;">${html}</body></html>`);
-            win.document.close();
-            setTimeout(() => win.print(), 500);
-        },
-        
         // ===== WHATSAPP =====
         sendWhatsAppDirect() {
             if (this.cart.length === 0) {
@@ -1466,4 +1917,4 @@ function kasirApp() {
             img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgData);
         }
     }
-                }
+        }
